@@ -246,9 +246,11 @@
       "q" 'lsp-ui-flycheck-list
       )
 
-;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
-;; (lsp-haskell-set-hlint-on)
-;; (lsp-haskell-set-liquid-off)
+(after! lsp-haskell
+  (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
+  (lsp-haskell-set-hlint-on)
+  (lsp-haskell-set-liquid-off)
+  )
 
 (eval-after-load "align"
   '(add-to-list 'align-rules-list
@@ -271,15 +273,18 @@
                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                   (modes quote (haskell-mode literate-haskell-mode)))))
 
-;; (require 'projectile)
-;; (projectile-register-project-type 'haskell-stack '("stack.yaml")
-;;     :compile haskell-compile-cabal-build-command
-;;     :test "stack build --test")
+(after! projectile
+  (projectile-register-project-type 'haskell-stack '("stack.yaml")
+    :compile haskell-compile-cabal-build-command
+    :test "stack build --test")
+  )
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
-(setq user-full-name "Matthew Wraith"
-      user-mail-address "matt@bitnomial.com")
+(setq
+ user-full-name "Matthew Wraith"
+ user-mail-address "matt@bitnomial.com"
+ )
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
 ;; are the three important ones:
