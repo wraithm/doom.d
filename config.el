@@ -3,8 +3,6 @@
 ;; Place your private configuration here! Remember, you do not need to run 'doom
 ;; sync' after modifying this file!
 
-;;; Code:
-
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
 (setq user-full-name "Matthew Wraith"
@@ -59,51 +57,53 @@
 
 
 ;; evil-mode
-(setq evil-shift-width 4
-      evil-want-C-w-in-emacs-state t)
+(after! evil-mode
+  (setq-default
+   evil-shift-width 4
+   evil-want-C-w-in-emacs-state t)
 
-(map!
- :n "C-w" 'evil-window-map
- :n "C-w C-h" 'undefined
- :n "C-h" 'evil-window-left
- :n "C-j" 'evil-window-down
- :n "C-k" 'evil-window-up
- :n "C-l" 'evil-window-right
- :m "C-h" 'evil-window-left
- :m "C-j" 'evil-window-down
- :m "C-k" 'evil-window-up
- :m "C-l" 'evil-window-right
- :n "U" 'universal-argument
- :m "U" 'universal-argument
- )
+  (use-package evil-nerd-commenter
+    :config
+    (map! "M-;" 'evilnc-comment-or-uncomment-lines)
+    (map! :n "gc" 'evilnc-comment-operator)
+    )
+  (use-package evil-nerd-commenter-operator)
 
-(use-package evil-nerd-commenter
-  :config
-  (map! "M-;" 'evilnc-comment-or-uncomment-lines)
-  (map! :n "gc" 'evilnc-comment-operator)
-  )
-(use-package evil-nerd-commenter-operator)
+  (map!
+   :n "C-w" 'evil-window-map
+   :n "C-w C-h" 'undefined
+   :n "C-h" 'evil-window-left
+   :n "C-j" 'evil-window-down
+   :n "C-k" 'evil-window-up
+   :n "C-l" 'evil-window-right
+   :m "C-h" 'evil-window-left
+   :m "C-j" 'evil-window-down
+   :m "C-k" 'evil-window-up
+   :m "C-l" 'evil-window-right
+   :n "U" 'universal-argument
+   :m "U" 'universal-argument
+   )
 
-(evil-ex-define-cmd "W" 'save-buffer)
-(evil-ex-define-cmd "Q" 'save-buffers-kill-terminal)
-(evil-ex-define-cmd "BD" 'kill-this-buffer)
+  (evil-ex-define-cmd "W" 'save-buffer)
+  (evil-ex-define-cmd "Q" 'save-buffers-kill-terminal)
+  (evil-ex-define-cmd "BD" 'kill-this-buffer)
 
-;; Stamp operator
-(evil-define-operator evil-delete-without-register (beg end type yank-handler)
-  "Delete from beg to end and send to \"_ register"
-  (interactive "<R><y>")
-  (evil-delete beg end type ?_ yank-handler))
+  ;; Stamp operator
+  (evil-define-operator evil-delete-without-register (beg end type yank-handler)
+    "Delete from beg to end and send to \"_ register"
+    (interactive "<R><y>")
+    (evil-delete beg end type ?_ yank-handler))
 
-(evil-define-operator evil-stamp (beg end)
-  "Replace text-object with 0th register contents"
-  (evil-delete-without-register beg end)
-  (evil-paste-from-register ?0))
+  (evil-define-operator evil-stamp (beg end)
+    "Replace text-object with 0th register contents"
+    (evil-delete-without-register beg end)
+    (evil-paste-from-register ?0))
 
-(map! :n "S" 'evil-stamp)
+  (map! :n "S" 'evil-stamp)
 
-(evil-set-initial-state 'sql-interactive-mode 'emacs)
+  (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
-(use-package evil-indent-textobject)
+)
 
 ;; Highlight mode-line instead of audible bell
 (defvar ring-bell-mode-line-color "#F2804F")
@@ -186,7 +186,6 @@
 ;;                ;; (window-height . 25)
 ;;                ;; display-buffer-pop-up-window
 ;;                ;; display-buffer-at-bottom
-
 ;;                display-buffer-reuse-window
 ;;                (reusable-frames . t)
 ;;                (inhibit-switch-frame . t)
@@ -337,8 +336,8 @@
                     (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                     (modes quote (haskell-mode literate-haskell-mode)))))
 
+  (require 'projectile)
+  (projectile-register-project-type 'haskell-stack '("stack.yaml")
+      :compile haskell-compile-cabal-build-command
+      :test "stack build --test")
   )
-
-(projectile-register-project-type 'haskell-stack '("stack.yaml")
-    :compile haskell-compile-cabal-build-command
-    :test "stack build --test")
