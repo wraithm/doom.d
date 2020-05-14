@@ -46,10 +46,11 @@
 ;; our package manager can't deal with; see raxod502/straight.el#279)
 ;(package! builtin-package :recipe (:branch "develop"))
 
-(package! ix)
-(package! dash-at-point)
-(package! vagrant-tramp)
-(package! logstash-conf)
+;; (package! ix)
+;; (package! dash-at-point)
+;; https://github.com/dash-docs-el/counsel-dash
+;; (package! vagrant-tramp)
+;; (package! logstash-conf)
 
 
 ;; TODO magit, github-review, etc

@@ -89,8 +89,8 @@
        ;; ein               ; tame Jupyter notebooks with emacs
        (eval +overlay)     ; run code, run (also, repls)
        ;; gist              ; interacting with github gists
-       lookup              ; navigate your code and its documentation
-       lsp
+       (lookup +docsets)              ; navigate your code and its documentation
+       (lsp +peek)
        macos             ; MacOS-specific commands
        magit             ; a git porcelain for Emacs
        ;; make              ; run make tasks from Emacs
@@ -138,8 +138,8 @@
        ;; nim               ; python + lisp at the speed of c
        ;; nix               ; I hereby declare "nix geht mehr!"
        ;; ocaml             ; an objective camel
-       org               ; organize your plain life in plain text
-       perl              ; write code no one else can comprehend
+       (org +gnuplot +pandoc +present)               ; organize your plain life in plain text
+       ;; perl              ; write code no one else can comprehend
        ;; php               ; perl's insecure younger brother
        ;; plantuml          ; diagrams for confusing people more
        ;; purescript        ; javascript, but functional
@@ -173,4 +173,4 @@
 
        :config
        ;; literate
-       (default +bindings +smartparens))
+       (default +bindings))
