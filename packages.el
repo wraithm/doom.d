@@ -46,14 +46,13 @@
 ;; our package manager can't deal with; see raxod502/straight.el#279)
 ;(package! builtin-package :recipe (:branch "develop"))
 
-;; (package! ix)
-;; (package! dash-at-point)
-;; https://github.com/dash-docs-el/counsel-dash
-;; (package! vagrant-tramp)
-;; (package! logstash-conf)
+(package! rg)
+(package! ix)
+(package! dash-at-point)
+(package! vagrant-tramp)
+(package! logstash-conf)
+(package! exec-path-from-shell)
 
-
-;; TODO magit, github-review, etc
 ;; TODO wolfram
 ;; TODO gnuplot
 ;; TODO auctex, latex-preview-pane?

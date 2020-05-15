@@ -6,7 +6,15 @@
 ;; Transparent titlebar
 (when IS-MAC
   (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark))
+
+  (map! "M-C-f" 'toggle-frame-fullscreen)
+  (map! "s-n" 'make-frame)
+
+  (require 'exec-path-from-shell)
+  (exec-path-from-shell-copy-env "SSH_AGENT_PID")
+  (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+  )
 
 ;; Window settings
 (add-to-list 'default-frame-alist '(width . 180))
@@ -27,7 +35,6 @@
      (left + -1000)
      (fullscreen . maximized))))
 
-(map! "s-n" 'make-frame)
 
 ;; Transparent background on terminal
 (defun unspecified-bg-frame (frame)
@@ -51,21 +58,17 @@
 
 ;; evil-mode
 (setq! evil-shift-width 4)
+(setq +evil-want-o/O-to-continue-comments nil)
 
 (map! "M-;" 'evilnc-comment-or-uncomment-lines)
 
 (map!
- :n "C-w" 'evil-window-map
- :n "C-h" 'evil-window-left
- :n "C-j" 'evil-window-down
- :n "C-k" 'evil-window-up
- :n "C-l" 'evil-window-right
- :m "C-h" 'evil-window-left
- :m "C-j" 'evil-window-down
- :m "C-k" 'evil-window-up
- :m "C-l" 'evil-window-right
- :n "U" 'universal-argument
- :m "U" 'universal-argument
+ :nm "C-w" 'evil-window-map
+ :nm "C-h" 'evil-window-left
+ :nm "C-j" 'evil-window-down
+ :nm "C-k" 'evil-window-up
+ :nm "C-l" 'evil-window-right
+ :nm "U" 'universal-argument
  )
 
 (evil-ex-define-cmd "W" 'save-buffer)
@@ -90,11 +93,8 @@
 (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
 ;; shell
-(evil-set-initial-state 'eshell-mode 'emacs)
-(add-hook! term-mode
- (lambda ()
-   (add-to-list 'term-bind-key-alist '("M-[" . multi-term-prev))
-   (add-to-list 'term-bind-key-alist '("M-]" . multi-term-next))))
+;; (evil-set-initial-state 'eshell-mode 'emacs)
+;; (evil-set-initial-state 'vterm-mode 'emacs)
 (setq term-buffer-maximum-size 10000)
 
 ;; Highlight mode-line instead of audible bell
@@ -122,18 +122,12 @@
     (delete-other-windows)
     (switch-to-buffer (current-buffer)))
     (let ((buffer (current-buffer))
-      (window (split-window-sensibly)))
+          (window (split-window-sensibly)))
       (switch-to-buffer buffer)
       (balance-windows)))
   (setq server-visit-files-custom-find:buffer-count
     (1+ server-visit-files-custom-find:buffer-count)))
 (add-hook 'server-visit-hook 'server-visit-hook-custom-find)
-
-;; Mac specific stuff
-(map! "M-C-f" 'toggle-frame-fullscreen)
-(when (eq system-type 'darwin)
-  (advice-add 'ns-new-frame :after '(scroll-bar-mode -1))
-  (advice-add 'ns-new-frame :after #'toggle-frame-fullscreen))
 
 ;; ediff
 (require 'ediff)
@@ -165,8 +159,10 @@
   (setq! tramp-default-method "sshx")
   )
 
-;; elisp
-(add-hook! emacs-lisp-mode 'turn-off-smartparens-mode)
+;; smartparens
+(after! smartparens (smartparens-global-mode -1))
+
+;; (add-hook! emacs-lisp-mode 'turn-off-smartparens-mode)
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 
 ;; LSP
@@ -175,6 +171,14 @@
  ;; lsp-ui-doc-enable t
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
+ )
+
+;; TODO magit, github-review, etc
+;; TODO somehow add haskell dash docsets
+(autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
+(map!
+ "C-c d" 'dash-at-point
+ "C-c e" 'dash-at-point-with-docset
  )
 
 ;; Haskell
@@ -191,8 +195,6 @@
        haskell-process-auto-import-loaded-modules t
        haskell-process-log t
        )
-
-;; TODO somehow add haskell dash docsets
 
 (defun stack-compile-command ()
   (interactive)
@@ -233,7 +235,7 @@
    )
 
 (after! lsp-haskell
-  (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
+  ;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
   (lsp-haskell-set-hlint-on)
   (lsp-haskell-set-liquid-off)
   )
@@ -266,12 +268,14 @@
 )
 
 ;; TODO dash-at-point
-;; TODO remove autoparens
 ;; TODO alignment key
 ;; TODO org-mode setup
 ;; TODO ix
 ;; TODO irc
 ;; TODO magit, forge, github-review
+
+;; Auth sources
+(setq auth-sources '("~/.authinfo" "~/.netrc"))
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
@@ -304,11 +308,13 @@
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/Dropbox/org/")
+(setq org-log-done 'time)
 
-(defun my-paragraph-hook ()
-  (setq paragraph-start "\\|[    ]*$"
-        paragraph-separate "[     ]*$"))
-(add-hook! org-mode #'my-paragraph-hook)
+(defun org-file-path (filename)
+  "Return the absolute address of an org file, given its relative name."
+  (concat (file-name-as-directory org-directory) filename))
+(defvar org-index-file (org-file-path "index.org")) ; TODO Not used for anything. Need an org-capture template.
+(setq org-archive-location (concat (org-file-path "archive.org") "::* From %s"))
 
 (defun mark-done-and-archive ()
   "Mark the state of an org-mode item as DONE and archive it."
@@ -317,6 +323,11 @@
   (org-archive-subtree))
 
 (after! org
+  (setq org-capture-templates (append org-capture-templates
+                                      `(("f" "Fun facts and tips and tricks" entry
+                                         (file ,(org-file-path "fun-facts.org"))
+                                         "* %?\nEntered on %U\n  %i\n  %a"))))
+
   (map!
    :map org-mode-map
    :localleader
