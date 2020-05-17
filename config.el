@@ -52,13 +52,16 @@
  vc-handled-backends '(Git) ; to disable vc-mode entirely
  )
 
-(add-hook! 'before-save-hook 'delete-trailing-whitespace)
+;; (add-hook! 'before-save-hook 'delete-trailing-whitespace) ; using ws-butler for now
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
 
 ;; evil-mode
-(setq! evil-shift-width 4)
-(setq +evil-want-o/O-to-continue-comments nil)
+(after! evil
+  (setq! evil-shift-width 4)
+  (setq! evil-want-C-w-in-emacs-state t)
+  (setq +evil-want-o/O-to-continue-comments nil)
+)
 
 (map! "M-;" 'evilnc-comment-or-uncomment-lines)
 
@@ -93,9 +96,10 @@
 (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
 ;; shell
-;; (evil-set-initial-state 'eshell-mode 'emacs)
-;; (evil-set-initial-state 'vterm-mode 'emacs)
+(evil-set-initial-state 'eshell-mode 'emacs)
+(evil-set-initial-state 'vterm-mode 'emacs)
 (setq term-buffer-maximum-size 10000)
+;; TODO https://github.com/suonlight/multi-vterm
 
 ;; Highlight mode-line instead of audible bell
 (defvar ring-bell-mode-line-color "#F2804F")
@@ -161,8 +165,16 @@
 
 ;; smartparens
 (after! smartparens (smartparens-global-mode -1))
-
 ;; (add-hook! emacs-lisp-mode 'turn-off-smartparens-mode)
+
+;; dash-at-point
+(autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
+(map!
+ "C-c d" 'dash-at-point
+ "C-c e" 'dash-at-point-with-docset
+ )
+
+;; flycheck
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
 
 ;; LSP
@@ -171,14 +183,6 @@
  ;; lsp-ui-doc-enable t
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
- )
-
-;; TODO magit, github-review, etc
-;; TODO somehow add haskell dash docsets
-(autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
-(map!
- "C-c d" 'dash-at-point
- "C-c e" 'dash-at-point-with-docset
  )
 
 ;; Haskell
@@ -240,6 +244,7 @@
   (lsp-haskell-set-liquid-off)
   )
 
+;; Alignment
 (eval-after-load "align"
   '(add-to-list 'align-rules-list
                 '(haskell-types
@@ -261,11 +266,60 @@
                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                   (modes quote (haskell-mode literate-haskell-mode)))))
 
+;; Haskell Evil intendation
+(defun haskell-indentation-indent-line ()
+  "Indent current line, cycle though indentation positions.
+Do nothing inside multiline comments and multiline strings.
+Start enumerating the indentation points to the right.  The user
+can continue by repeatedly pressing TAB.  When there is no more
+indentation points to the right, we switch going to the left."
+  (interactive)
+  ;; try to repeat
+  (when (not (haskell-indentation-indent-line-repeat))
+    (setq haskell-indentation-dyn-last-direction nil)
+    ;; parse error is intentionally not caught here, it may come from
+    ;; `haskell-indentation-find-indentations', but escapes the scope
+    ;; and aborts the operation before any moving happens
+    (let* ((cc (current-column))
+           (ci (haskell-indentation-current-indentation))
+           (inds (save-excursion
+                   (move-to-column ci)
+                   (or (haskell-indentation-find-indentations)
+                       '(0))))
+           (valid (memq ci inds))
+           (cursor-in-whitespace (< cc ci))
+           ;; certain evil commands need the behaviour seen in
+           ;; `haskell-indentation-newline-and-indent'
+           (evil-special-command (and (bound-and-true-p evil-mode)
+                                      (memq this-command '(evil-open-above
+                                                           evil-open-below
+                                                           evil-replace))))
+           (on-last-indent (eq ci (car (last inds)))))
+      (if (and valid cursor-in-whitespace)
+          (move-to-column ci)
+        (haskell-indentation-reindent-to
+         (funcall
+          (if on-last-indent
+              #'haskell-indentation-previous-indentation
+            #'haskell-indentation-next-indentation)
+          (if evil-special-command
+              (save-excursion
+                (end-of-line 0)
+                (1- (haskell-indentation-current-indentation)))
+            ci)
+          inds
+          'nofail)
+         cursor-in-whitespace))
+      (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
+            haskell-indentation-dyn-last-indentations inds))))
+
+)
+
 (after! projectile
   (projectile-register-project-type 'haskell-stack '("stack.yaml")
-    :compile haskell-compile-cabal-build-command
+    :compile "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
     :test "stack build --test"))
-)
+
 
 ;; TODO dash-at-point
 ;; TODO alignment key

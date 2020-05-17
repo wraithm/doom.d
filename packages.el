@@ -52,6 +52,7 @@
 (package! vagrant-tramp)
 (package! logstash-conf)
 (package! exec-path-from-shell)
+(package! haskell-snippets)
 
 ;; TODO wolfram
 ;; TODO gnuplot
