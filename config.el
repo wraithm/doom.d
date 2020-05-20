@@ -59,24 +59,20 @@
 ;; ivy
 ;; TODO ivy-imenu-goto (from my old config)
 ;; TODO ivy-xref-show-xrefs??
-(after! ivy
-  (setq!
-   ivy-use-virtual-buffers t
-   enable-recursive-minibuffers t
-   ivy-virtual-abbreviate 'fullpath
-   ivy-extra-directories nil ; no dired on double-tab or enter
-   )
+(setq!
+ ivy-virtual-abbreviate 'fullpath
+ ivy-extra-directories nil ; no dired on double-tab or enter
+ )
 
-  ;; (setq-default ivy-re-builders-alist '((t . ivy--regex-fuzzy)))
+;; (setq-default ivy-re-builders-alist '((t . ivy--regex-fuzzy)))
 
-  (map!
-   :map ivy-minibuffer-map
-   "RET" #'ivy-alt-done
-   "C-j" #'ivy-immediate-done
-   "C-RET" #'ivy-immediate-done
-   "<up>" #'ivy-previous-line-or-history
-   )
-  )
+(map!
+ :map ivy-minibuffer-map
+ "RET" #'ivy-alt-done
+ "C-j" #'ivy-immediate-done
+ "C-RET" #'ivy-immediate-done
+ "<up>" #'ivy-previous-line-or-history
+ )
 
 ;; evil-mode
 (after! evil
