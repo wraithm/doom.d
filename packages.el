@@ -57,3 +57,4 @@
 ;; TODO wolfram
 ;; TODO gnuplot
 ;; TODO auctex, latex-preview-pane?
+;; TODO counsel-tramp

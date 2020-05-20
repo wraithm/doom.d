@@ -56,6 +56,28 @@
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
 
+;; ivy
+;; TODO ivy-imenu-goto (from my old config)
+;; TODO ivy-xref-show-xrefs??
+(after! ivy
+  (setq!
+   ivy-use-virtual-buffers t
+   enable-recursive-minibuffers t
+   ivy-virtual-abbreviate 'fullpath
+   ivy-extra-directories nil ; no dired on double-tab or enter
+   )
+
+  ;; (setq-default ivy-re-builders-alist '((t . ivy--regex-fuzzy)))
+
+  (map!
+   :map ivy-minibuffer-map
+   "RET" #'ivy-alt-done
+   "C-j" #'ivy-immediate-done
+   "C-RET" #'ivy-immediate-done
+   "<up>" #'ivy-previous-line-or-history
+   )
+  )
+
 ;; evil-mode
 (after! evil
   (setq! evil-shift-width 4)
@@ -236,6 +258,8 @@
    "N" 'haskell-goto-next-error
    "P" 'haskell-goto-previous-error
    "a" 'align
+   "d" 'dash-at-point
+   "e" 'dash-at-point-with-docset
    )
 
 (after! lsp-haskell
@@ -265,53 +289,6 @@
                 '(haskell-left-arrows
                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                   (modes quote (haskell-mode literate-haskell-mode)))))
-
-;; Haskell Evil intendation
-(defun haskell-indentation-indent-line ()
-  "Indent current line, cycle though indentation positions.
-Do nothing inside multiline comments and multiline strings.
-Start enumerating the indentation points to the right.  The user
-can continue by repeatedly pressing TAB.  When there is no more
-indentation points to the right, we switch going to the left."
-  (interactive)
-  ;; try to repeat
-  (when (not (haskell-indentation-indent-line-repeat))
-    (setq haskell-indentation-dyn-last-direction nil)
-    ;; parse error is intentionally not caught here, it may come from
-    ;; `haskell-indentation-find-indentations', but escapes the scope
-    ;; and aborts the operation before any moving happens
-    (let* ((cc (current-column))
-           (ci (haskell-indentation-current-indentation))
-           (inds (save-excursion
-                   (move-to-column ci)
-                   (or (haskell-indentation-find-indentations)
-                       '(0))))
-           (valid (memq ci inds))
-           (cursor-in-whitespace (< cc ci))
-           ;; certain evil commands need the behaviour seen in
-           ;; `haskell-indentation-newline-and-indent'
-           (evil-special-command (and (bound-and-true-p evil-mode)
-                                      (memq this-command '(evil-open-above
-                                                           evil-open-below
-                                                           evil-replace))))
-           (on-last-indent (eq ci (car (last inds)))))
-      (if (and valid cursor-in-whitespace)
-          (move-to-column ci)
-        (haskell-indentation-reindent-to
-         (funcall
-          (if on-last-indent
-              #'haskell-indentation-previous-indentation
-            #'haskell-indentation-next-indentation)
-          (if evil-special-command
-              (save-excursion
-                (end-of-line 0)
-                (1- (haskell-indentation-current-indentation)))
-            ci)
-          inds
-          'nofail)
-         cursor-in-whitespace))
-      (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
-            haskell-indentation-dyn-last-indentations inds))))
 
 )
 
