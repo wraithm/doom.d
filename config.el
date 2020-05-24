@@ -10,6 +10,10 @@
 
   (map! "M-C-f" 'toggle-frame-fullscreen)
   (map! "s-n" 'make-frame)
+  (map!
+   (:when (not (featurep! :ui workspaces))
+    "s-w" #'doom/delete-frame-with-prompt
+    ))
 
   (require 'exec-path-from-shell)
   (exec-path-from-shell-copy-env "SSH_AGENT_PID")
@@ -56,11 +60,14 @@
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
 
+;; dired
+(add-hook 'dired-after-readin-hook 'dired-git-info-auto-enable)
+
 ;; ivy
 ;; TODO ivy-imenu-goto (from my old config)
 ;; TODO ivy-xref-show-xrefs??
 (setq!
- ivy-virtual-abbreviate 'fullpath
+ ivy-virtual-abbreviate 'full
  ivy-extra-directories nil ; no dired on double-tab or enter
  )
 
@@ -81,8 +88,6 @@
   (setq +evil-want-o/O-to-continue-comments nil)
 )
 
-(map! "M-;" 'evilnc-comment-or-uncomment-lines)
-
 (map!
  :nm "C-w" 'evil-window-map
  :nm "C-h" 'evil-window-left
@@ -95,6 +100,8 @@
 (evil-ex-define-cmd "W" 'save-buffer)
 (evil-ex-define-cmd "Q" 'save-buffers-kill-terminal)
 (evil-ex-define-cmd "BD" 'kill-this-buffer)
+
+(map! "M-;" 'evilnc-comment-or-uncomment-lines)
 
 ;; Stamp operator
 (after! evil-snipe (evil-snipe-mode -1)) ; disable snipe mode
@@ -114,10 +121,17 @@
 (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
 ;; shell
-(evil-set-initial-state 'eshell-mode 'emacs)
-(evil-set-initial-state 'vterm-mode 'emacs)
-(setq term-buffer-maximum-size 10000)
 ;; TODO https://github.com/suonlight/multi-vterm
+(setq term-buffer-maximum-size 10000)
+(setq-hook! '(vterm-mode-hook eshell-mode-hook)
+  evil-insert-state-cursor 'box
+  evil-move-cursor-back nil
+  )
+
+(set-eshell-alias!
+ "vim" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
+ "ec" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
+ )
 
 ;; Highlight mode-line instead of audible bell
 (defvar ring-bell-mode-line-color "#F2804F")
@@ -218,6 +232,10 @@
        haskell-process-log t
        )
 
+(setq-hook! 'haskell-mode-hook
+  compile-command haskell-compile-cabal-build-command
+  )
+
 (defun stack-compile-command ()
   (interactive)
   (setq compile-command haskell-compile-cabal-build-command))
@@ -285,6 +303,52 @@
                 '(haskell-left-arrows
                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                   (modes quote (haskell-mode literate-haskell-mode)))))
+
+(defun haskell-indentation-indent-line ()
+  "Indent current line, cycle though indentation positions.
+Do nothing inside multiline comments and multiline strings.
+Start enumerating the indentation points to the right.  The user
+can continue by repeatedly pressing TAB.  When there is no more
+indentation points to the right, we switch going to the left."
+  (interactive)
+  ;; try to repeat
+  (when (not (haskell-indentation-indent-line-repeat))
+    (setq haskell-indentation-dyn-last-direction nil)
+    ;; parse error is intentionally not caught here, it may come from
+    ;; `haskell-indentation-find-indentations', but escapes the scope
+    ;; and aborts the operation before any moving happens
+    (let* ((cc (current-column))
+            (ci (haskell-indentation-current-indentation))
+            (inds (save-excursion
+                    (move-to-column ci)
+                    (or (haskell-indentation-find-indentations)
+                        '(0))))
+            (valid (memq ci inds))
+            (cursor-in-whitespace (< cc ci))
+            ;; certain evil commands need the behaviour seen in
+            ;; `haskell-indentation-newline-and-indent'
+            (evil-special-command (and (bound-and-true-p evil-mode)
+                                      (memq this-command '(evil-open-above
+                                                            evil-open-below
+                                                            evil-replace))))
+            (on-last-indent (eq ci (car (last inds)))))
+      (if (and valid cursor-in-whitespace)
+          (move-to-column ci)
+        (haskell-indentation-reindent-to
+          (funcall
+          (if on-last-indent
+              #'haskell-indentation-previous-indentation
+            #'haskell-indentation-next-indentation)
+          (if evil-special-command
+              (save-excursion
+                (end-of-line 0)
+                (1- (haskell-indentation-current-indentation)))
+            ci)
+          inds
+          'nofail)
+          cursor-in-whitespace))
+      (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
+            haskell-indentation-dyn-last-indentations inds))))
 
 )
 

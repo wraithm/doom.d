@@ -53,6 +53,7 @@
 (package! logstash-conf)
 (package! exec-path-from-shell)
 (package! haskell-snippets)
+;; (package! multi-vterm)
 
 ;; TODO wolfram
 ;; TODO gnuplot
