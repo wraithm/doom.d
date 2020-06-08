@@ -12,13 +12,16 @@
   (map! "s-n" 'make-frame)
   (map!
    (:when (not (featurep! :ui workspaces))
-    "s-w" #'doom/delete-frame-with-prompt
+    [remap delete-frame] nil
+    "s-w" #'delete-frame
     ))
 
   (require 'exec-path-from-shell)
   (exec-path-from-shell-copy-env "SSH_AGENT_PID")
   (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
   )
+
+;; (setq confirm-kill-emacs nil)
 
 ;; Window settings
 (add-to-list 'default-frame-alist '(width . 180))
@@ -120,18 +123,29 @@
 
 (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
+;; Doom mappings
+(map! :leader (:prefix ("o" . "open") :desc "Browse url" "u" #'browse-url))
+
 ;; shell
-;; TODO https://github.com/suonlight/multi-vterm
-(setq term-buffer-maximum-size 10000)
+(setq!
+ eshell-glob-case-insensitive t
+ eshell-cmpl-ignore-case t
+ term-buffer-maximum-size 10000
+ )
 (setq-hook! '(vterm-mode-hook eshell-mode-hook)
   evil-insert-state-cursor 'box
   evil-move-cursor-back nil
   )
 
+(evil-set-initial-state 'eshell-mode 'emacs)
+(evil-set-initial-state 'vterm-mode 'emacs)
+
 (set-eshell-alias!
  "vim" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
  "ec" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
  )
+
+;; TODO https://github.com/suonlight/multi-vterm
 
 ;; Highlight mode-line instead of audible bell
 (defvar ring-bell-mode-line-color "#F2804F")
@@ -211,7 +225,7 @@
 
 ;; LSP
 (setq
- lsp-ui-sideline-enable nil
+ ;; lsp-ui-sideline-enable nil
  ;; lsp-ui-doc-enable t
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
@@ -271,11 +285,22 @@
    "F" 'haskell-goto-first-error
    "N" 'haskell-goto-next-error
    "P" 'haskell-goto-previous-error
-   "a" 'align
    "d" 'dash-at-point
    "e" 'dash-at-point-with-docset
    )
 
+;; haskell-language-server
+;; (use-package! lsp-haskell
+;;  :ensure t
+;;  :config
+;;  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper")
+;;  ;; Comment/uncomment this line to see interactions between lsp client/server.
+;;  ;;(setq lsp-log-io t)
+;;  (lsp-haskell-set-hlint-on)
+;;  (lsp-haskell-set-liquid-off)
+;; )
+
+;; hie
 (after! lsp-haskell
   ;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
   (lsp-haskell-set-hlint-on)
@@ -414,16 +439,78 @@ indentation points to the right, we switch going to the left."
   (org-archive-subtree))
 
 (after! org
-  (setq org-capture-templates (append org-capture-templates
-                                      `(("f" "Fun facts and tips and tricks" entry
-                                         (file ,(org-file-path "fun-facts.org"))
-                                         "* %?\nEntered on %U\n  %i\n  %a"))))
+  (defun +org--capture-local-root (path)
+    (let ((filename (file-name-nondirectory path)))
+      (expand-file-name
+       filename
+       (or (locate-dominating-file (file-truename default-directory)
+                                   filename)
+           (concat (file-name-as-directory (doom-project-root)) ".org")
+           (user-error "Couldn't detect a project")))))
+
+  (defun +org-capture-project-todo-file ()
+    "Find the nearest `+org-capture-todo-file' in a parent directory, otherwise,
+opens a blank one at the project root. Throws an error if not in a project."
+    (+org--capture-local-root +org-capture-todo-file))
+
+  (defun +org-capture-project-notes-file ()
+    "Find the nearest `+org-capture-notes-file' in a parent directory, otherwise,
+opens a blank one at the project root. Throws an error if not in a project."
+    (+org--capture-local-root +org-capture-notes-file))
+
+  (setq org-capture-templates
+        '(("t" "todo" entry
+           (file+headline +org-capture-todo-file "Inbox")
+           "* [ ] %?\n%i\n%a" :prepend t)
+          ("n" "notes" entry
+           (file+headline +org-capture-notes-file "Inbox")
+           "* %u %?\n%i\n%a" :prepend t)
+          ("j" "journal" entry
+           (file+olp+datetree +org-capture-journal-file)
+           "* %U %?\n%i\n%a" :prepend t)
+
+          ;; Will use {project-root}/.org/{todo,notes,changelog}.org, unless a
+          ;; {todo,notes,changelog}.org file is found in a parent directory.
+          ;; Uses the basename from `+org-capture-todo-file',
+          ;; `+org-capture-changelog-file' and `+org-capture-notes-file'.
+          ("p" "projects")
+          ("pt" "Project-local todo" entry  ; {project-root}/todo.org
+           (file+headline +org-capture-project-todo-file "Inbox")
+           "* TODO %?\n%i\n%a" :prepend t)
+          ("pn" "Project-local notes" entry  ; {project-root}/notes.org
+           (file+headline +org-capture-project-notes-file "Inbox")
+           "* %U %?\n%i\n%a" :prepend t)
+
+          ("f" "Fun facts and tips and tricks" entry
+           (file ,(org-file-path "fun-facts.org"))
+           "* %?\nEntered on %U\n  %i\n  %a")
+
+          ))
+
+  (setq org-todo-keywords
+        '((sequence
+           "TODO(t)"  ; A task that needs doing & is ready to do
+           "PROJ(p)"  ; A project, which usually contains other tasks
+           "STRT(s)"  ; A task that is in progress
+           "WAIT(w)"  ; Something external is holding up this task
+           "HOLD(h)"  ; This task is paused/on hold because of me
+           "|"
+           "DONE(d)"  ; Task successfully completed
+           "KILL(k)") ; Task was cancelled, aborted or is no longer applicable
+          (sequence
+           "[ ](T)"   ; A task that needs doing
+           "[-](S)"   ; Task is in progress
+           "[?](W)"   ; Task is being held up or paused
+           "|"
+           "[X](D)")) ; Task was completed
+        )
 
   (map!
    :map org-mode-map
    :localleader
    "A" 'mark-done-and-archive
-   ))
+   )
+  )
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.

@@ -53,6 +53,7 @@
 (package! logstash-conf)
 (package! exec-path-from-shell)
 (package! haskell-snippets)
+(package! dhall-mode)
 ;; (package! multi-vterm)
 
 ;; TODO wolfram
