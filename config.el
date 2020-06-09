@@ -125,6 +125,7 @@
 
 ;; Doom mappings
 (map! :leader (:prefix ("o" . "open") :desc "Browse url" "u" #'browse-url))
+(map! :leader (:prefix ("s" . "search") :desc "Rg" "g" #'rg))
 
 ;; shell
 (setq!
@@ -289,6 +290,9 @@
    "e" 'dash-at-point-with-docset
    )
 
+(evil-set-initial-state 'haskell-interactive-mode 'emacs)
+(evil-set-initial-state 'haskell-error-mode 'emacs)
+
 ;; haskell-language-server
 ;; (use-package! lsp-haskell
 ;;  :ensure t
@@ -439,7 +443,7 @@ indentation points to the right, we switch going to the left."
   (org-archive-subtree))
 
 (after! org
-  (defun +org--capture-local-root (path)
+  (defun my-org-capture-local-root (path)
     (let ((filename (file-name-nondirectory path)))
       (expand-file-name
        filename
@@ -448,15 +452,15 @@ indentation points to the right, we switch going to the left."
            (concat (file-name-as-directory (doom-project-root)) ".org")
            (user-error "Couldn't detect a project")))))
 
-  (defun +org-capture-project-todo-file ()
+  (defun my-org-capture-project-todo-file ()
     "Find the nearest `+org-capture-todo-file' in a parent directory, otherwise,
 opens a blank one at the project root. Throws an error if not in a project."
-    (+org--capture-local-root +org-capture-todo-file))
+    (my-org-capture-local-root "todo.org"))
 
-  (defun +org-capture-project-notes-file ()
+  (defun my-org-capture-project-notes-file ()
     "Find the nearest `+org-capture-notes-file' in a parent directory, otherwise,
 opens a blank one at the project root. Throws an error if not in a project."
-    (+org--capture-local-root +org-capture-notes-file))
+    (my-org-capture-local-root "notes.org"))
 
   (setq org-capture-templates
         '(("t" "todo" entry
@@ -475,10 +479,10 @@ opens a blank one at the project root. Throws an error if not in a project."
           ;; `+org-capture-changelog-file' and `+org-capture-notes-file'.
           ("p" "projects")
           ("pt" "Project-local todo" entry  ; {project-root}/todo.org
-           (file+headline +org-capture-project-todo-file "Inbox")
+           (file+headline my-org-capture-project-todo-file "Inbox")
            "* TODO %?\n%i\n%a" :prepend t)
           ("pn" "Project-local notes" entry  ; {project-root}/notes.org
-           (file+headline +org-capture-project-notes-file "Inbox")
+           (file+headline my-org-capture-project-notes-file "Inbox")
            "* %U %?\n%i\n%a" :prepend t)
 
           ("f" "Fun facts and tips and tricks" entry
