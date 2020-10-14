@@ -91,7 +91,6 @@
        ;; gist              ; interacting with github gists
        lookup              ; navigate your code and its documentation
        (lsp +peek)
-       macos             ; MacOS-specific commands
        (magit +forge)             ; a git porcelain for Emacs
        ;; make              ; run make tasks from Emacs
        ;; pass              ; password manager for nerds
@@ -101,6 +100,9 @@
        terraform         ; infrastructure as code
        ;; tmux              ; an API for interacting with tmux
        ;; upload            ; map local to remote projects via ssh/ftp
+
+       :os
+       macos             ; MacOS-specific commands
 
        :lang
        ;; agda              ; types of types of types of types...
@@ -138,12 +140,12 @@
        ;; nim               ; python + lisp at the speed of c
        ;; nix               ; I hereby declare "nix geht mehr!"
        ;; ocaml             ; an objective camel
-       (org +gnuplot +pandoc +present)               ; organize your plain life in plain text
+       (org +gnuplot +pandoc) ; +present +noter)               ; organize your plain life in plain text
        ;; perl              ; write code no one else can comprehend
        ;; php               ; perl's insecure younger brother
        ;; plantuml          ; diagrams for confusing people more
        ;; purescript        ; javascript, but functional
-       ;; python            ; beautiful is better than ugly
+       python            ; beautiful is better than ugly
        ;; qt                ; the 'cutest' gui framework ever
        ;; racket            ; a DSL for DSLs
        ;; rest              ; Emacs as a REST client

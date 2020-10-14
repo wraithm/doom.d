@@ -53,8 +53,11 @@
 (package! logstash-conf)
 (package! exec-path-from-shell)
 (package! haskell-snippets)
+(package! ormolu)
 (package! dhall-mode)
 ;; (package! multi-vterm)
+
+(package! bazel-mode)
 
 ;; TODO wolfram
 ;; TODO gnuplot

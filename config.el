@@ -62,6 +62,7 @@
 ;; (add-hook! 'before-save-hook 'delete-trailing-whitespace) ; using ws-butler for now
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
+(add-hook! markdown-mode 'turn-on-auto-fill)
 
 ;; dired
 (add-hook 'dired-after-readin-hook 'dired-git-info-auto-enable)
@@ -211,7 +212,9 @@
   )
 
 ;; smartparens
-(after! smartparens (smartparens-global-mode -1))
+;; (remove-hook! doom-first-buffer smartparens-global-mode)
+;; (add-hook! doom-first-buffer (smartparens-global-mode -1))
+;; (after! smartparens (smartparens-global-mode -1))
 ;; (add-hook! emacs-lisp-mode 'turn-off-smartparens-mode)
 
 ;; dash-at-point
@@ -222,15 +225,16 @@
  )
 
 ;; flycheck
-(setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc))
+(setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc haskell-stack-ghc haskell-ghc))
 
 ;; LSP
 (setq
- ;; lsp-ui-sideline-enable nil
+ lsp-ui-sideline-enable nil
  ;; lsp-ui-doc-enable t
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
  )
+
 
 ;; Haskell
 (after! haskell
@@ -249,6 +253,7 @@
 
 (setq-hook! 'haskell-mode-hook
   compile-command haskell-compile-cabal-build-command
+  ormolu-process-path "fourmolu"
   )
 
 (defun stack-compile-command ()
@@ -271,121 +276,133 @@
   :type line
   (haskell-navigate-imports))
 
-  (map!
-   :map haskell-mode-map
-   :localleader
-   "t" 'haskell-mode-show-type-at
-   "h" 'hoogle
-   "i" 'my-haskell-navigate-imports
-   "r" 'haskell-process-restart
-   "q" 'lsp-ui-flycheck-list
-   "c" 'haskell-compile
-   "f" 'first-error
-   "n" 'next-error
-   "p" 'previous-error
-   "F" 'haskell-goto-first-error
-   "N" 'haskell-goto-next-error
-   "P" 'haskell-goto-previous-error
-   "d" 'dash-at-point
-   "e" 'dash-at-point-with-docset
-   )
-
 (evil-set-initial-state 'haskell-interactive-mode 'emacs)
 (evil-set-initial-state 'haskell-error-mode 'emacs)
 
 ;; haskell-language-server
-;; (use-package! lsp-haskell
-;;  :ensure t
-;;  :config
-;;  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper")
-;;  ;; Comment/uncomment this line to see interactions between lsp client/server.
-;;  ;;(setq lsp-log-io t)
-;;  (lsp-haskell-set-hlint-on)
-;;  (lsp-haskell-set-liquid-off)
-;; )
-
-;; hie
-(after! lsp-haskell
-  ;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
+(use-package! lsp-haskell
+  :ensure t
+  :config
+  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper")
+  ;; Comment/uncomment this line to see interactions between lsp client/server.
+  ;;(setq lsp-log-io t)
   (lsp-haskell-set-hlint-on)
   (lsp-haskell-set-liquid-off)
   )
 
-;; Alignment
-(eval-after-load "align"
-  '(add-to-list 'align-rules-list
-                '(haskell-types
-                  (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
-                  (modes quote (haskell-mode literate-haskell-mode)))))
-(eval-after-load "align"
-  '(add-to-list 'align-rules-list
-                '(haskell-assignment
-                  (regexp . "\\(\\s-+\\)=\\s-+")
-                  (modes quote (haskell-mode literate-haskell-mode)))))
-(eval-after-load "align"
-  '(add-to-list 'align-rules-list
-                '(haskell-arrows
-                  (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
-                  (modes quote (haskell-mode literate-haskell-mode)))))
-(eval-after-load "align"
-  '(add-to-list 'align-rules-list
-                '(haskell-left-arrows
-                  (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
-                  (modes quote (haskell-mode literate-haskell-mode)))))
+;; hie
+;; (after! lsp-haskell
+;;   ;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
+;;   (lsp-haskell-set-hlint-on)
+;;   (lsp-haskell-set-liquid-off)
+;;   )
 
-(defun haskell-indentation-indent-line ()
-  "Indent current line, cycle though indentation positions.
-Do nothing inside multiline comments and multiline strings.
-Start enumerating the indentation points to the right.  The user
-can continue by repeatedly pressing TAB.  When there is no more
-indentation points to the right, we switch going to the left."
-  (interactive)
-  ;; try to repeat
-  (when (not (haskell-indentation-indent-line-repeat))
-    (setq haskell-indentation-dyn-last-direction nil)
-    ;; parse error is intentionally not caught here, it may come from
-    ;; `haskell-indentation-find-indentations', but escapes the scope
-    ;; and aborts the operation before any moving happens
-    (let* ((cc (current-column))
-            (ci (haskell-indentation-current-indentation))
-            (inds (save-excursion
-                    (move-to-column ci)
-                    (or (haskell-indentation-find-indentations)
-                        '(0))))
-            (valid (memq ci inds))
-            (cursor-in-whitespace (< cc ci))
-            ;; certain evil commands need the behaviour seen in
-            ;; `haskell-indentation-newline-and-indent'
-            (evil-special-command (and (bound-and-true-p evil-mode)
-                                      (memq this-command '(evil-open-above
-                                                            evil-open-below
-                                                            evil-replace))))
-            (on-last-indent (eq ci (car (last inds)))))
-      (if (and valid cursor-in-whitespace)
-          (move-to-column ci)
-        (haskell-indentation-reindent-to
-          (funcall
-          (if on-last-indent
-              #'haskell-indentation-previous-indentation
-            #'haskell-indentation-next-indentation)
-          (if evil-special-command
-              (save-excursion
-                (end-of-line 0)
-                (1- (haskell-indentation-current-indentation)))
-            ci)
-          inds
-          'nofail)
-          cursor-in-whitespace))
-      (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
-            haskell-indentation-dyn-last-indentations inds))))
+(map!
+ :map haskell-mode-map
+ :localleader
+ "t" 'haskell-mode-show-type-at
+ "h" 'hoogle
+ "i" 'my-haskell-navigate-imports
+ "r" 'haskell-process-restart
+ "q" 'lsp-ui-flycheck-list
+ "c" 'haskell-compile
+ "f" 'first-error
+ "n" 'next-error
+ "p" 'previous-error
+ "F" 'haskell-goto-first-error
+ "N" 'haskell-goto-next-error
+ "P" 'haskell-goto-previous-error
+ "d" 'dash-at-point
+ "e" 'dash-at-point-with-docset
+ "o" 'ormolu-format-buffer
+ )
+
+;; Alignment
+;; (eval-after-load "align"
+;;   '(add-to-list 'align-rules-list
+;;                 '(haskell-types
+;;                   (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
+;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+;; (eval-after-load "align"
+;;   '(add-to-list 'align-rules-list
+;;                 '(haskell-assignment
+;;                   (regexp . "\\(\\s-+\\)=\\s-+")
+;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+;; (eval-after-load "align"
+;;   '(add-to-list 'align-rules-list
+;;                 '(haskell-arrows
+;;                   (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
+;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+;; (eval-after-load "align"
+;;   '(add-to-list 'align-rules-list
+;;                 '(haskell-left-arrows
+;;                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
+;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+
+;; (defun haskell-indentation-indent-line ()
+;;   "Indent current line, cycle though indentation positions.
+;; Do nothing inside multiline comments and multiline strings.
+;; Start enumerating the indentation points to the right.  The user
+;; can continue by repeatedly pressing TAB.  When there is no more
+;; indentation points to the right, we switch going to the left."
+;;   (interactive)
+;;   ;; try to repeat
+;;   (when (not (haskell-indentation-indent-line-repeat))
+;;     (setq haskell-indentation-dyn-last-direction nil)
+;;     ;; parse error is intentionally not caught here, it may come from
+;;     ;; `haskell-indentation-find-indentations', but escapes the scope
+;;     ;; and aborts the operation before any moving happens
+;;     (let* ((cc (current-column))
+;;             (ci (haskell-indentation-current-indentation))
+;;             (inds (save-excursion
+;;                     (move-to-column ci)
+;;                     (or (haskell-indentation-find-indentations)
+;;                         '(0))))
+;;             (valid (memq ci inds))
+;;             (cursor-in-whitespace (< cc ci))
+;;             ;; certain evil commands need the behaviour seen in
+;;             ;; `haskell-indentation-newline-and-indent'
+;;             (evil-special-command (and (bound-and-true-p evil-mode)
+;;                                       (memq this-command '(evil-open-above
+;;                                                             evil-open-below
+;;                                                             evil-replace))))
+;;             (on-last-indent (eq ci (car (last inds)))))
+;;       (if (and valid cursor-in-whitespace)
+;;           (move-to-column ci)
+;;         (haskell-indentation-reindent-to
+;;           (funcall
+;;           (if on-last-indent
+;;               #'haskell-indentation-previous-indentation
+;;             #'haskell-indentation-next-indentation)
+;;           (if evil-special-command
+;;               (save-excursion
+;;                 (end-of-line 0)
+;;                 (1- (haskell-indentation-current-indentation)))
+;;             ci)
+;;           inds
+;;           'nofail)
+;;           cursor-in-whitespace))
+;;       (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
+;;             haskell-indentation-dyn-last-indentations inds))))
 
 )
+
+(add-hook! haskell-mode #'ormolu-format-on-save-mode)
 
 (after! projectile
   (projectile-register-project-type 'haskell-stack '("stack.yaml")
     :compile "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
     :test "stack build --test"))
 
+(after! dhall-mode
+  (setq! dhall-format-arguments '("--ascii")
+         dhall-use-header-line nil))
+
+(defun rg-clear-doom-ansi-color-compilation-hook ()
+  (make-local-variable 'compilation-filter-hook)
+  (remove-hook 'compilation-filter-hook #'doom-apply-ansi-color-to-compilation-buffer-h))
+
+(add-hook! rg-mode 'rg-clear-doom-ansi-color-compilation-hook)
 
 ;; TODO dash-at-point
 ;; TODO alignment key
@@ -417,6 +434,8 @@ indentation points to the right, we switch going to the left."
 (setq
  doom-font (font-spec :family "SF Mono" :size 12)
  doom-big-font (font-spec :family "SF Mono" :size 16)
+ ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
+ ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
  doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
  )
 
@@ -537,3 +556,20 @@ opens a blank one at the project root. Throws an error if not in a project."
 ;;
 ;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
 ;; they are implemented.
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(safe-local-variable-values
+   (quote
+    ((haskell-process-type . stack-ghci)
+     (haskell-indentation-left-offset . 4)
+     (haskell-indentation-layout-offset . 4)))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
