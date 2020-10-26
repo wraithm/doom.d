@@ -75,8 +75,6 @@
  ivy-extra-directories nil ; no dired on double-tab or enter
  )
 
-;; (setq-default ivy-re-builders-alist '((t . ivy--regex-fuzzy)))
-
 (map!
  :map ivy-minibuffer-map
  "RET" #'ivy-alt-done
@@ -235,13 +233,22 @@
  lsp-ui-doc-max-width 100
  )
 
+(after! company
+  (map!
+   :map company-active-map
+   "<return>" nil
+   "RET" nil
+   "C-SPC" #'company-complete-selection
+   )
+  )
 
 ;; Haskell
 (after! haskell
-(setq! haskell-stylish-on-save t
+(setq! haskell-stylish-on-save nil
        haskell-interactive-set-+c t
        haskell-indentation-layout-offset 4
        haskell-indentation-left-offset 4
+       haskell-indentation-starter-offset 4
        haskell-compile-cabal-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
        haskell-compile-cabal-build-alt-command (concat "stack clean && " haskell-compile-cabal-build-command)
        haskell-process-type 'stack-ghci
@@ -262,7 +269,7 @@
 
 (defun haskell-company-backends ()
   (set (make-local-variable 'company-backends)
-                   (append '((company-lsp company-capf company-dabbrev-code))
+                   (append '((company-lsp company-capf company-dabbrev-code company-yasnippet))
                            company-backends)))
 
 (add-hook! haskell-mode 'stack-compile-command)
@@ -289,13 +296,6 @@
   (lsp-haskell-set-hlint-on)
   (lsp-haskell-set-liquid-off)
   )
-
-;; hie
-;; (after! lsp-haskell
-;;   ;; (setq warning-minimum-level ':error) ; This is temporary for a bug in lsp-ui that pops up errors
-;;   (lsp-haskell-set-hlint-on)
-;;   (lsp-haskell-set-liquid-off)
-;;   )
 
 (map!
  :map haskell-mode-map
@@ -556,20 +556,3 @@ opens a blank one at the project root. Throws an error if not in a project."
 ;;
 ;; You can also try 'gd' (or 'C-c g d') to jump to their definition and see how
 ;; they are implemented.
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(safe-local-variable-values
-   (quote
-    ((haskell-process-type . stack-ghci)
-     (haskell-indentation-left-offset . 4)
-     (haskell-indentation-layout-offset . 4)))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
