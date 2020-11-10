@@ -205,9 +205,9 @@
   )
 
 ;; tramp
-(after! tramp
-  (setq! tramp-default-method "sshx")
-  )
+;; (after! tramp
+;;   (setq! tramp-default-method "sshx")
+;;   )
 
 ;; smartparens
 ;; (remove-hook! doom-first-buffer smartparens-global-mode)
@@ -231,6 +231,7 @@
  ;; lsp-ui-doc-enable t
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
+ lsp-enable-file-watchers nil
  )
 
 (after! company
@@ -256,6 +257,7 @@
        haskell-process-suggest-hoogle-imports t
        haskell-process-auto-import-loaded-modules t
        haskell-process-log t
+       lsp-haskell-formatting-provider "fourmolu"
        )
 
 (setq-hook! 'haskell-mode-hook
@@ -285,17 +287,6 @@
 
 (evil-set-initial-state 'haskell-interactive-mode 'emacs)
 (evil-set-initial-state 'haskell-error-mode 'emacs)
-
-;; haskell-language-server
-(use-package! lsp-haskell
-  :ensure t
-  :config
-  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper")
-  ;; Comment/uncomment this line to see interactions between lsp client/server.
-  ;;(setq lsp-log-io t)
-  (lsp-haskell-set-hlint-on)
-  (lsp-haskell-set-liquid-off)
-  )
 
 (map!
  :map haskell-mode-map
