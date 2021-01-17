@@ -63,6 +63,7 @@
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
 (add-hook! markdown-mode 'turn-on-auto-fill)
+(add-hook! org-mode 'turn-on-auto-fill)
 
 ;; dired
 (add-hook 'dired-after-readin-hook 'dired-git-info-auto-enable)
@@ -74,6 +75,11 @@
  ivy-virtual-abbreviate 'full
  ivy-extra-directories nil ; no dired on double-tab or enter
  )
+(add-to-list 'completion-ignored-extensions ".hie")
+(after! ivy
+  (setq counsel-find-file-ignore-regexp
+        (regexp-opt completion-ignored-extensions))
+  )
 
 (map!
  :map ivy-minibuffer-map
@@ -210,10 +216,8 @@
 ;;   )
 
 ;; smartparens
-;; (remove-hook! doom-first-buffer smartparens-global-mode)
-;; (add-hook! doom-first-buffer (smartparens-global-mode -1))
-;; (after! smartparens (smartparens-global-mode -1))
-;; (add-hook! emacs-lisp-mode 'turn-off-smartparens-mode)
+(remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
+(after! eshell (remove-hook 'eshell-mode-hook #'smartparens-mode))
 
 ;; dash-at-point
 (autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
@@ -232,6 +236,7 @@
  lsp-ui-doc-max-height 30
  lsp-ui-doc-max-width 100
  lsp-enable-file-watchers nil
+ lsp-before-save-edits nil
  )
 
 (after! company
@@ -245,6 +250,8 @@
 
 ;; Haskell
 (after! haskell
+(load "~/.doom.d/ghcid.el")
+
 (setq! haskell-stylish-on-save nil
        haskell-interactive-set-+c t
        haskell-indentation-layout-offset 4
@@ -307,6 +314,16 @@
  "e" 'dash-at-point-with-docset
  "o" 'ormolu-format-buffer
  )
+
+(defun allow-typed-holes ()
+  (interactive)
+  (save-excursion
+    (goto-char 1)
+    (insert "{-# OPTIONS_GHC -fdefer-typed-holes -Wno-typed-holes #-}\n")))
+
+(map! :map haskell-mode-map
+      :leader
+      :g "c h h" 'allow-typed-holes)
 
 ;; Alignment
 ;; (eval-after-load "align"
@@ -404,6 +421,9 @@
 
 ;; Auth sources
 (setq auth-sources '("~/.authinfo" "~/.netrc"))
+
+;; Default directory
+(setq default-directory "~/")
 
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets.
