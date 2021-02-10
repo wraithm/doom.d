@@ -5,8 +5,12 @@
 
 ;; Transparent titlebar
 (when IS-MAC
+  (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
+
   (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
   (add-to-list 'default-frame-alist '(ns-appearance . dark))
+
+  (remove-hook 'doom-first-buffer-hook #'global-hl-line-mode)
 
   (map! "M-C-f" 'toggle-frame-fullscreen)
   (map! "s-n" 'make-frame)
@@ -76,6 +80,8 @@
  ivy-extra-directories nil ; no dired on double-tab or enter
  )
 (add-to-list 'completion-ignored-extensions ".hie")
+(add-to-list 'completion-ignored-extensions ".DS_Store") ; a little weird to have these as extensions...
+(add-to-list 'completion-ignored-extensions ".stack-work") ; whatever...
 (after! ivy
   (setq counsel-find-file-ignore-regexp
         (regexp-opt completion-ignored-extensions))
@@ -265,6 +271,8 @@
        haskell-process-auto-import-loaded-modules t
        haskell-process-log t
        lsp-haskell-formatting-provider "fourmolu"
+       lsp-haskell-diagnostics-on-change nil
+       lsp-haskell-tactic-on nil
        )
 
 (setq-hook! 'haskell-mode-hook
@@ -443,8 +451,10 @@
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
 (setq
- doom-font (font-spec :family "SF Mono" :size 12)
- doom-big-font (font-spec :family "SF Mono" :size 16)
+ ;; doom-font (font-spec :family "SF Mono" :size 12)
+ ;; doom-big-font (font-spec :family "SF Mono" :size 16)
+ doom-font (font-spec :family "Fira Code" :size 12)
+ doom-big-font (font-spec :family "Fira Code" :size 16)
  ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
  ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
  doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
