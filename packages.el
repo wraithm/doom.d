@@ -63,5 +63,3 @@
 ;; TODO gnuplot
 ;; TODO auctex, latex-preview-pane?
 ;; TODO counsel-tramp
-
-(package! lsp-haskell :pin "5d3f4814f6ac44547a62551472cc76fbaebcccf7")

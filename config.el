@@ -59,7 +59,7 @@
 (setq-default
  tab-width 4
  indent-tabs-mode nil
- fill-column 120
+ fill-column 100
  vc-handled-backends '(Git) ; to disable vc-mode entirely
  )
 
