@@ -256,6 +256,7 @@
   )
 
 ;; Gnome-shell-mode
+(when IS-LINUX
 (use-package! gnome-shell-mode
   :defer t
   :commands (gnome-shell-mode)
@@ -301,6 +302,7 @@
      )
    )
   )
+)
 
 (use-package! company-gnome-shell
   :defer t
