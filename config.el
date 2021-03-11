@@ -23,6 +23,14 @@
   (require 'exec-path-from-shell)
   (exec-path-from-shell-copy-env "SSH_AGENT_PID")
   (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+
+  ;; dash-at-point
+  (autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
+  (map!
+   "C-c d" 'dash-at-point
+   "C-c e" 'dash-at-point-with-docset
+   )
+
   )
 
 ;; (setq confirm-kill-emacs nil)
@@ -225,13 +233,6 @@
 (remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
 (after! eshell (remove-hook 'eshell-mode-hook #'smartparens-mode))
 
-;; dash-at-point
-(autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
-(map!
- "C-c d" 'dash-at-point
- "C-c e" 'dash-at-point-with-docset
- )
-
 ;; flycheck
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc haskell-stack-ghc haskell-ghc))
 
@@ -253,6 +254,59 @@
    "C-SPC" #'company-complete-selection
    )
   )
+
+;; Gnome-shell-mode
+(use-package! gnome-shell-mode
+  :defer t
+  :commands (gnome-shell-mode)
+  :config
+  (setq-hook! 'gnome-shell-mode-hook
+    mode-name "GJS")
+
+  (map!
+   :map gnome-shell-mode-map
+   :v "<return>" 'gnome-shell-send-region
+   :gvni "C-<return>" 'gnome-shell-repl
+
+   :map gnome-shell-mode-map
+   :localleader
+   :gnv :desc "Reload buffer" "r" 'gnome-shell-reload
+   :desc "Reload session" "R" 'gnome-shell-restart
+   :desc "Launch session" "l" 'gnome-shell-launch-session
+   :desc "Clear output" "c" 'gnome-shell-clear-output-at-point
+
+   (:prefix ("g" . "jump")
+     :desc "Jump to definition" "g" '+lookup/definition)
+
+   (:prefix ("s" . "eval in session")
+     :desc "Eval buffer" "b" 'gnome-shell-send-buffer
+     :desc "Eval function" "f" 'gnome-shell-send-proc
+     :desc "Eval function" "d" 'gnome-shell-send-proc
+     :desc "Eval line" "l" 'gnome-shell-send-current-line
+     :desc "Eval region" "r" 'gnome-shell-send-region)
+
+   (:prefix ("e" . "eval in session")
+     :desc "Eval buffer" "b" 'gnome-shell-send-buffer
+     :desc "Eval function" "f" 'gnome-shell-send-proc
+     :desc "Eval function" "d" 'gnome-shell-send-proc
+     :desc "Eval line" "l" 'gnome-shell-send-current-line
+     :desc "Eval region" "r" 'gnome-shell-send-region)
+
+   (:prefix ("o" . "output")
+     :desc "Clear all output" "c" 'gnome-shell-clear-output
+     :desc "Copy output" "y" 'gnome-shell-copy-output)
+
+   (:prefix ("h" . "help")
+     :desc "Lookup at point" "h" 'gnome-shell-look-up-function-at-point
+     )
+   )
+  )
+
+(use-package! company-gnome-shell
+  :defer t
+  :commands (company-gnome-shell)
+  :init
+  (set-company-backend! 'gnome-shell-mode 'company-gnome-shell))
 
 ;; Haskell
 (after! haskell
@@ -450,15 +504,22 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(setq
- ;; doom-font (font-spec :family "SF Mono" :size 12)
- ;; doom-big-font (font-spec :family "SF Mono" :size 16)
- doom-font (font-spec :family "Fira Code" :size 12)
- doom-big-font (font-spec :family "Fira Code" :size 16)
- ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
- ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
- doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
- )
+(when IS-MAC
+  (setq
+   doom-font (font-spec :family "SF Mono" :size 12)
+   doom-big-font (font-spec :family "SF Mono" :size 16)
+   ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
+   ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
+   doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
+   ))
+
+(when IS-LINUX
+  (setq
+   doom-font (font-spec :family "Fira Code" :size 14)
+   doom-big-font (font-spec :family "Fira Code" :size 18)
+   ;; doom-font "Terminus (TTF):pixelsize=16:antialias=off"
+   ;; doom-big-font "Terminus (TTF):pixelsize=20:antialias=off"
+   ))
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the

@@ -48,7 +48,6 @@
 
 (package! rg)
 (package! ix)
-(package! dash-at-point)
 (package! vagrant-tramp)
 (package! logstash-conf)
 (package! exec-path-from-shell)
@@ -63,3 +62,16 @@
 ;; TODO gnuplot
 ;; TODO auctex, latex-preview-pane?
 ;; TODO counsel-tramp
+
+(when IS-MAC
+  (package! dash-at-point)
+  )
+
+(when IS-LINUX
+  (package! gnome-shell-mode
+    :recipe (:host github :repo "paperwm/gnome-shell-mode"
+             :files ("local/gnome-shell-mode/*")))
+  (package! company-gnome-shell
+    :recipe (:host github :repo "paperwm/gnome-shell-mode"
+             :files ("local/company-gnome-shell/*.el")))
+  )
