@@ -319,7 +319,7 @@
        haskell-indentation-layout-offset 4
        haskell-indentation-left-offset 4
        haskell-indentation-starter-offset 4
-       haskell-compile-cabal-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
+       haskell-compile-cabal-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --no-interleaved-output"
        haskell-compile-cabal-build-alt-command (concat "stack clean && " haskell-compile-cabal-build-command)
        haskell-process-type 'stack-ghci
        haskell-process-suggest-remove-import-lines t
@@ -364,6 +364,7 @@
  :localleader
  "t" 'haskell-mode-show-type-at
  "h" 'hoogle
+ "H" 'haskell-hoogle-lookup-from-website
  "i" 'my-haskell-navigate-imports
  "r" 'haskell-process-restart
  "q" 'lsp-ui-flycheck-list
@@ -374,9 +375,9 @@
  "F" 'haskell-goto-first-error
  "N" 'haskell-goto-next-error
  "P" 'haskell-goto-previous-error
+ :when IS-MAC
  "d" 'dash-at-point
  "e" 'dash-at-point-with-docset
- "o" 'ormolu-format-buffer
  )
 
 (defun allow-typed-holes ()
@@ -458,8 +459,6 @@
 ;;             haskell-indentation-dyn-last-indentations inds))))
 
 )
-
-(add-hook! haskell-mode #'ormolu-format-on-save-mode)
 
 (after! projectile
   (projectile-register-project-type 'haskell-stack '("stack.yaml")
