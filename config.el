@@ -465,10 +465,6 @@
     :compile "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
     :test "stack build --test"))
 
-(after! dhall-mode
-  (setq! dhall-format-arguments '("--ascii")
-         dhall-use-header-line nil))
-
 (defun rg-clear-doom-ansi-color-compilation-hook ()
   (make-local-variable 'compilation-filter-hook)
   (remove-hook 'compilation-filter-hook #'doom-apply-ansi-color-to-compilation-buffer-h))
