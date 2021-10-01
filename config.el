@@ -239,12 +239,34 @@
 ;; LSP
 (setq
  lsp-ui-sideline-enable nil
- ;; lsp-ui-doc-enable t
- lsp-ui-doc-max-height 30
- lsp-ui-doc-max-width 100
+ lsp-ui-doc-enable nil
+ lsp-ui-doc-max-height 50
+ lsp-ui-doc-max-width 150
  lsp-enable-file-watchers nil
  lsp-before-save-edits nil
  )
+
+(setq +format-on-save-enabled-modes
+  '(not emacs-lisp-mode    ; elisp's mechanisms are good enough
+        sql-mode           ; sqlformat is currently broken
+        tex-mode           ; latexindent is broken
+        latex-mode
+        org-msg-edit-mode
+        haskell-mode
+        ) ; doesn't need a formatter
+  )
+
+(setq lsp-clients-clangd-args '("-j=5"
+                                "--background-index"
+                                "--clang-tidy"
+                                "--completion-style=detailed"
+                                "--header-insertion=iwyu"
+                                "--header-insertion-decorators=0"
+                                ))
+(after! lsp-clangd (set-lsp-priority! 'clangd 2))
+;; (after! ccls
+;;   (setq ccls-initialization-options '(:index (:comments 2) :completion (:detailedLabel t)))
+;;   (set-lsp-priority! 'ccls 2)) ; optional as ccls is the default in Doom
 
 (after! company
   (map!
@@ -347,6 +369,7 @@
 
 (add-hook! haskell-mode 'stack-compile-command)
 (add-hook! haskell-mode 'haskell-company-backends)
+(add-hook! haskell-mode 'ormolu-format-on-save-mode)
 ;; TODO is yas activated?
 ;; TODO lsp-enable-xref?
 
@@ -476,10 +499,25 @@
 ;; TODO org-mode setup
 ;; TODO ix
 ;; TODO irc
-;; TODO magit, forge, github-review
+
+;; magit
+(setq magit-section-initial-visibility-alist
+      '((stashes . show)
+        (branch . show)
+        (unstaged . show)
+        (untracked . show)
+        (unpushed . show)
+        (pullreqs . show)
+        (issues . hide)
+        ))
 
 ;; Auth sources
 (setq auth-sources '("~/.authinfo" "~/.netrc"))
+
+(after! grip-mode
+  (let ((credential (auth-source-user-and-password "api.github.com")))
+  (setq grip-github-user (car credential)
+        grip-github-password (cadr credential))))
 
 ;; Default directory
 (setq default-directory "~/")
@@ -512,7 +550,7 @@
 
 (when IS-LINUX
   (setq
-   doom-font (font-spec :family "Fira Code" :size 14)
+   doom-font (font-spec :family "Fira Code" :size 12)
    doom-big-font (font-spec :family "Fira Code" :size 18)
    ;; doom-font "Terminus (TTF):pixelsize=16:antialias=off"
    ;; doom-big-font "Terminus (TTF):pixelsize=20:antialias=off"
@@ -522,6 +560,7 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'doom-one)
+;; (setq doom-theme 'doom-tomorrow-night)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
