@@ -71,7 +71,7 @@
  vc-handled-backends '(Git) ; to disable vc-mode entirely
  )
 
-;; (add-hook! 'before-save-hook 'delete-trailing-whitespace) ; using ws-butler for now
+(add-hook 'before-save-hook 'delete-trailing-whitespace) ; using ws-butler for now
 (add-hook! fundamental-mode 'flyspell-mode)
 (add-hook! fundamental-mode 'turn-on-auto-fill)
 (add-hook! markdown-mode 'turn-on-auto-fill)
@@ -223,6 +223,8 @@
   (setq web-mode-script-padding 0)
   (setq web-mode-style-padding 0)
   )
+(add-hook! web-mode 'prettier-js-mode)
+(add-hook! js2-mode 'prettier-js-mode)
 
 ;; tramp
 ;; (after! tramp
