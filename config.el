@@ -604,13 +604,13 @@ opens a blank one at the project root. Throws an error if not in a project."
   (setq org-capture-templates
         '(("t" "todo" entry
            (file+headline +org-capture-todo-file "Inbox")
-           "* [ ] %?\n%i\n%a" :prepend t)
+           "* [ ] %?\n%i\n%a" :prepend t :empty-lines 1)
           ("n" "notes" entry
            (file+headline +org-capture-notes-file "Inbox")
-           "* %u %?\n%i\n%a" :prepend t)
+           "* %u %?\n%i\n%a" :prepend t :empty-lines 1)
           ("j" "journal" entry
            (file+olp+datetree +org-capture-journal-file)
-           "* %U %?\n%i\n%a" :prepend t)
+           "* %U %?\n%i\n%a" :prepend t :empty-lines 1)
 
           ;; Will use {project-root}/.org/{todo,notes,changelog}.org, unless a
           ;; {todo,notes,changelog}.org file is found in a parent directory.
@@ -619,14 +619,14 @@ opens a blank one at the project root. Throws an error if not in a project."
           ("p" "projects")
           ("pt" "Project-local todo" entry  ; {project-root}/todo.org
            (file+headline my-org-capture-project-todo-file "Inbox")
-           "* TODO %?\n%i\n%a" :prepend t)
+           "* TODO %?\n%i\n%a" :prepend t :empty-lines 1)
           ("pn" "Project-local notes" entry  ; {project-root}/notes.org
            (file+headline my-org-capture-project-notes-file "Inbox")
-           "* %U %?\n%i\n%a" :prepend t)
+           "* %U %?\n%i\n%a" :prepend t :empty-lines 1)
 
           ("f" "Fun facts and tips and tricks" entry
            (file ,(org-file-path "fun-facts.org"))
-           "* %?\nEntered on %U\n  %i\n  %a")
+           "* %?\nEntered on %U\n  %i\n  %a" :empty-lines 1)
 
           ))
 
