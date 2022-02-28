@@ -63,6 +63,11 @@
 (unspecified-bg-frame (selected-frame))
 (add-hook 'after-make-frame-functions 'unspecified-bg-frame)
 
+(setq xterm-set-window-title t)
+(defadvice! fix-xterm-set-window-title (&optional terminal)
+  :before-while #'xterm-set-window-title
+  (not (display-graphic-p terminal)))
+
 ;; Basics
 (setq-default
  tab-width 4
@@ -625,7 +630,7 @@ opens a blank one at the project root. Throws an error if not in a project."
            "* %U %?\n%i\n%a" :prepend t :empty-lines 1)
 
           ("f" "Fun facts and tips and tricks" entry
-           (file ,(org-file-path "fun-facts.org"))
+           (file "fun-facts.org")
            "* %?\nEntered on %U\n  %i\n  %a" :empty-lines 1)
 
           ))

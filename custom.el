@@ -6,7 +6,8 @@
  '(custom-safe-themes
    '("aaa4c36ce00e572784d424554dcc9641c82d1155370770e231e10c649b59a074" "fce3524887a0994f8b9b047aef9cc4cc017c5a93a5fb1f84d300391fba313743" "e1ef2d5b8091f4953fe17b4ca3dd143d476c106e221d92ded38614266cea3c8b" default))
  '(safe-local-variable-values
-   '((web-mode-code-indent-offset . 2)
+   '((js2-basic-offset . 4)
+     (web-mode-code-indent-offset . 2)
      (web-mode-css-indent-offset . 2)
      (web-mode-markup-indent-offset . 2)
      (ormolu-process-path . "fourmolu")
