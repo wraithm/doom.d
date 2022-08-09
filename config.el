@@ -518,6 +518,20 @@
         (issues . hide)
         ))
 
+(map! :map magit-status-mode-map
+      :leader
+      :desc "Start code review"
+      :g "g v" '+magit/start-code-review)
+
+(map! :map topic-mode-mode-map
+      :leader
+      :desc "Start code review"
+      :g "g v" '+magit/start-code-review)
+
+(after! magit-worktree
+  (transient-append-suffix 'magit-dispatch '(0 -1 -1)
+    '("*" "Worktree" magit-worktree)))
+
 ;; Auth sources
 (setq auth-sources '("~/.authinfo" "~/.netrc"))
 

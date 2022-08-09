@@ -53,6 +53,8 @@
 (package! exec-path-from-shell)
 (package! haskell-snippets)
 (package! ormolu)
+(package! prettier-js)
+(package! code-review)
 ;; (package! dhall-mode)
 ;; (package! multi-vterm)
 
@@ -67,13 +69,11 @@
   (package! dash-at-point)
   )
 
-(when IS-LINUX
-  (package! gnome-shell-mode
-    :recipe (:host github :repo "paperwm/gnome-shell-mode"
-             :files ("local/gnome-shell-mode/*")))
-  (package! company-gnome-shell
-    :recipe (:host github :repo "paperwm/gnome-shell-mode"
-             :files ("local/company-gnome-shell/*.el")))
-  )
-
-(package! prettier-js)
+;; (when IS-LINUX
+;;   (package! gnome-shell-mode
+;;     :recipe (:host github :repo "paperwm/gnome-shell-mode"
+;;              :files ("local/gnome-shell-mode/*")))
+;;   (package! company-gnome-shell
+;;     :recipe (:host github :repo "paperwm/gnome-shell-mode"
+;;              :files ("local/company-gnome-shell/*.el")))
+;;   )
