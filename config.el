@@ -260,6 +260,8 @@
         latex-mode
         org-msg-edit-mode
         haskell-mode
+        markdown-mode
+        json-mode
         ) ; doesn't need a formatter
   )
 
