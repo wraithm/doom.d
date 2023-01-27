@@ -163,7 +163,8 @@
   )
 
 (evil-set-initial-state 'eshell-mode 'emacs)
-(evil-set-initial-state 'vterm-mode 'emacs)
+(after! vterm
+        (evil-set-initial-state 'vterm-mode 'emacs))
 
 (set-eshell-alias!
  "vim" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
@@ -252,6 +253,14 @@
  lsp-enable-file-watchers nil
  lsp-before-save-edits nil
  )
+
+;; Hack for lsp-ui
+(add-hook 'help-mode-hook
+  (lambda ()
+    (when (string= (buffer-name (current-buffer)) "*lsp-help*")
+      (evil-local-set-key 'normal (kbd "RET") 'lsp-ui-doc--open-markdown-link)
+      (define-key help-mode-map
+        [remap markdown-follow-thing-at-point] 'lsp-ui-doc--open-markdown-link))))
 
 (setq +format-on-save-enabled-modes
   '(not emacs-lisp-mode    ; elisp's mechanisms are good enough
