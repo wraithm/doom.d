@@ -15,10 +15,10 @@
   (map! "M-C-f" 'toggle-frame-fullscreen)
   (map! "s-n" 'make-frame)
   (map!
-   (:when (not (featurep! :ui workspaces))
-    [remap delete-frame] nil
-    "s-w" #'delete-frame
-    ))
+   (:when (not (modulep! :ui workspaces))
+     [remap delete-frame] nil
+     "s-w" #'delete-frame
+     ))
 
   (require 'exec-path-from-shell)
   (exec-path-from-shell-copy-env "SSH_AGENT_PID")
@@ -58,8 +58,8 @@
 ;; Transparent background on terminal
 (defun unspecified-bg-frame (frame)
   (unless (display-graphic-p frame)
-      (set-face-background 'default "unspecified-bg" frame)
-      (set-face-background 'linum "unspecified-bg" frame)))
+    (set-face-background 'default "unspecified-bg" frame)
+    (set-face-background 'linum "unspecified-bg" frame)))
 (unspecified-bg-frame (selected-frame))
 (add-hook 'after-make-frame-functions 'unspecified-bg-frame)
 
@@ -108,12 +108,19 @@
  "<up>" #'ivy-previous-line-or-history
  )
 
+(map!
+ :leader
+ (:prefix-map ("c" . "code")
+  :desc "Recompile" "c" #'recompile
+  :desc "Compile"   "C" #'compile
+  ))
+
 ;; evil-mode
 (after! evil
   (setq! evil-shift-width 4)
   (setq! evil-want-C-w-in-emacs-state t)
   (setq +evil-want-o/O-to-continue-comments nil)
-)
+  )
 
 (map!
  :nm "C-w" 'evil-window-map
@@ -164,7 +171,7 @@
 
 (evil-set-initial-state 'eshell-mode 'emacs)
 (after! vterm
-        (evil-set-initial-state 'vterm-mode 'emacs))
+  (evil-set-initial-state 'vterm-mode 'emacs))
 
 (set-eshell-alias!
  "vim" "for i in ${eshell-flatten-list $*} {find-file-other-window $i}"
@@ -186,8 +193,8 @@
 ;; emacsclient open multiple files in separate windows
 (defvar server-visit-files-custom-find:buffer-count)
 (defadvice server-visit-files
-  (around server-visit-files-custom-find
-      activate compile)
+    (around server-visit-files-custom-find
+            activate compile)
   "Maintain a counter of visited files from a single client call."
   (let ((server-visit-files-custom-find:buffer-count 0))
     ad-do-it))
@@ -195,14 +202,14 @@
   "Arrange to visit the files from a client call in separate windows."
   (if (zerop server-visit-files-custom-find:buffer-count)
       (progn
-    (delete-other-windows)
-    (switch-to-buffer (current-buffer)))
+        (delete-other-windows)
+        (switch-to-buffer (current-buffer)))
     (let ((buffer (current-buffer))
           (window (split-window-sensibly)))
       (switch-to-buffer buffer)
       (balance-windows)))
   (setq server-visit-files-custom-find:buffer-count
-    (1+ server-visit-files-custom-find:buffer-count)))
+        (1+ server-visit-files-custom-find:buffer-count)))
 (add-hook 'server-visit-hook 'server-visit-hook-custom-find)
 
 ;; ediff
@@ -252,18 +259,21 @@
  lsp-ui-doc-max-width 150
  lsp-enable-file-watchers nil
  lsp-before-save-edits nil
+ lsp-nix-server-path "nil"
  )
 
-;; Hack for lsp-ui
-(add-hook 'help-mode-hook
-  (lambda ()
-    (when (string= (buffer-name (current-buffer)) "*lsp-help*")
-      (evil-local-set-key 'normal (kbd "RET") 'lsp-ui-doc--open-markdown-link)
-      (define-key help-mode-map
-        [remap markdown-follow-thing-at-point] 'lsp-ui-doc--open-markdown-link))))
+;; Get format-on-save for hcl files
+(after! format-all
+  (define-format-all-formatter hclfmt
+                               (:executable "hclfmt")
+                               (:install)
+                               (:modes hcl-mode)
+                               (:format (format-all--buffer-easy executable)))
+
+  )
 
 (setq +format-on-save-enabled-modes
-  '(not emacs-lisp-mode    ; elisp's mechanisms are good enough
+      '(not emacs-lisp-mode    ; elisp's mechanisms are good enough
         sql-mode           ; sqlformat is currently broken
         tex-mode           ; latexindent is broken
         latex-mode
@@ -272,7 +282,28 @@
         markdown-mode
         json-mode
         ) ; doesn't need a formatter
+      )
+
+(setq-hook! 'python-mode-hook +format-with-lsp nil)
+
+;; https://www.mattduck.com/lsp-python-getting-started.html
+(after! lsp
+  (lsp-register-custom-settings
+   '(("pyls.plugins.pyls_mypy.enabled" t t)
+     ("pyls.plugins.pyls_mypy.live_mode" nil t)
+     ("pyls.plugins.flake8.enabled" t t)
+     ))
+  (setq lsp-pylsp-plugins-pyflakes-enabled t)
   )
+
+;; Hack for lsp-ui
+(add-hook 'help-mode-hook
+          (lambda ()
+            (when (string= (buffer-name (current-buffer)) "*lsp-help*")
+              (evil-local-set-key 'normal (kbd "RET") 'lsp-ui-doc--open-markdown-link)
+              (define-key help-mode-map
+                          [remap markdown-follow-thing-at-point] 'lsp-ui-doc--open-markdown-link))))
+
 
 (setq lsp-clients-clangd-args '("-j=5"
                                 "--background-index"
@@ -295,161 +326,186 @@
    )
   )
 
+
 ;; Haskell
 (after! haskell
-(load "~/.doom.d/ghcid.el")
+  ;; (load "~/.doom.d/ghcid.el")
 
-(setq! haskell-stylish-on-save nil
-       haskell-interactive-set-+c t
-       haskell-indentation-layout-offset 4
-       haskell-indentation-left-offset 4
-       haskell-indentation-starter-offset 4
-       haskell-compile-cabal-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --no-interleaved-output"
-       haskell-compile-cabal-build-alt-command (concat "stack clean && " haskell-compile-cabal-build-command)
-       haskell-process-type 'stack-ghci
-       haskell-process-suggest-remove-import-lines t
-       haskell-process-suggest-hoogle-imports t
-       haskell-process-auto-import-loaded-modules t
-       haskell-process-log t
-       lsp-haskell-formatting-provider "fourmolu"
-       lsp-haskell-diagnostics-on-change nil
-       lsp-haskell-tactic-on nil
-       )
+  (setq! haskell-stylish-on-save nil
+         haskell-interactive-set-+c t
+         haskell-indentation-layout-offset 4
+         haskell-indentation-left-offset 4
+         haskell-indentation-starter-offset 4
+         haskell-compile-stack-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
+         haskell-compile-stack-build-alt-command (concat "stack clean && " haskell-compile-stack-build-command)
+         haskell-process-type 'stack-ghci
+         haskell-process-suggest-remove-import-lines t
+         haskell-process-suggest-hoogle-imports t
+         haskell-process-auto-import-loaded-modules t
+         haskell-process-log t
+         lsp-haskell-formatting-provider "fourmolu"
+         lsp-haskell-plugin-stan-global-on nil
+         )
 
-(setq-hook! 'haskell-mode-hook
-  compile-command haskell-compile-cabal-build-command
-  ormolu-process-path "fourmolu"
+  (setq-hook! 'haskell-mode-hook
+    compile-command haskell-compile-stack-build-command
+    ormolu-process-path "fourmolu"
+    )
+
+  (defun stack-compile-command ()
+    (interactive)
+    (setq compile-command haskell-compile-stack-build-command))
+
+  (defun haskell-company-backends ()
+    (set (make-local-variable 'company-backends)
+         (append '((company-lsp company-capf company-dabbrev-code company-yasnippet))
+                 company-backends)))
+
+  (add-hook! haskell-mode 'stack-compile-command)
+  (add-hook! haskell-mode 'haskell-company-backends)
+  (add-hook! haskell-mode 'ormolu-format-on-save-mode)
+  ;; TODO is yas activated?
+  ;; TODO lsp-enable-xref?
+
+  (evil-define-motion my-haskell-navigate-imports ()
+    "Navigate imports with evil motion"
+    :jump t
+    :type line
+    (haskell-navigate-imports))
+
+  (evil-set-initial-state 'haskell-interactive-mode 'emacs)
+  (evil-set-initial-state 'haskell-error-mode 'emacs)
+
+  (map!
+   :map haskell-mode-map
+   :localleader
+   "t" 'haskell-mode-show-type-at
+   "h" 'hoogle
+   "H" 'haskell-hoogle-lookup-from-website
+   "i" 'my-haskell-navigate-imports
+   "r" 'haskell-process-restart
+   "q" 'lsp-ui-flycheck-list
+   "c" 'haskell-compile
+   "f" 'first-error
+   "n" 'next-error
+   "p" 'previous-error
+   "F" 'haskell-goto-first-error
+   "N" 'haskell-goto-next-error
+   "P" 'haskell-goto-previous-error
+   :when IS-MAC
+   "d" 'dash-at-point
+   "e" 'dash-at-point-with-docset
+   )
+
+  (defun allow-typed-holes ()
+    (interactive)
+    (save-excursion
+      (goto-char 1)
+      (insert "{-# OPTIONS_GHC -fdefer-typed-holes -Wno-typed-holes #-}\n")))
+
+  (map! :map haskell-mode-map
+        :leader
+        :g "c h h" 'allow-typed-holes)
+
+  ;; compilation-mode fixes
+  ;; (require 'cl-lib)
+  (require 'compile)
+  (defun add-to-compilation-error-regexp-alist-alist (element index)
+    "Add ELEMENT with a unique key to compilation-error-regexp-alist-alist idempotently."
+    (let ((key (intern (format "haskell-error-%d" index))))
+      ;; Check if the key is not already in the alist
+      (unless (assoc key compilation-error-regexp-alist-alist)
+        (add-to-list 'compilation-error-regexp-alist-alist (cons key element)))
+      key))
+
+  (defun add-to-compilation-error-regexp-alist (key)
+    "Add KEY to compilation-error-regexp-alist idempotently."
+    ;; Check if the key is not already in the list
+    (unless (member key compilation-error-regexp-alist)
+      (push key compilation-error-regexp-alist)))
+
+  ;; Generate the keys and add the elements to compilation-error-regexp-alist-alist idempotently
+  (let ((keys (cl-loop for element in haskell-compilation-error-regexp-alist
+                       for index upfrom 0
+                       collect (add-to-compilation-error-regexp-alist-alist element index))))
+    ;; Add all new keys to compilation-error-regexp-alist idempotently
+    (mapc 'add-to-compilation-error-regexp-alist keys))
+
+  ;; Alignment
+  ;; (eval-after-load "align"
+  ;;   '(add-to-list 'align-rules-list
+  ;;                 '(haskell-types
+  ;;                   (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
+  ;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+  ;; (eval-after-load "align"
+  ;;   '(add-to-list 'align-rules-list
+  ;;                 '(haskell-assignment
+  ;;                   (regexp . "\\(\\s-+\\)=\\s-+")
+  ;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+  ;; (eval-after-load "align"
+  ;;   '(add-to-list 'align-rules-list
+  ;;                 '(haskell-arrows
+  ;;                   (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
+  ;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+  ;; (eval-after-load "align"
+  ;;   '(add-to-list 'align-rules-list
+  ;;                 '(haskell-left-arrows
+  ;;                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
+  ;;                   (modes quote (haskell-mode literate-haskell-mode)))))
+
+  ;; (defun haskell-indentation-indent-line ()
+  ;;   "Indent current line, cycle though indentation positions.
+  ;; Do nothing inside multiline comments and multiline strings.
+  ;; Start enumerating the indentation points to the right.  The user
+  ;; can continue by repeatedly pressing TAB.  When there is no more
+  ;; indentation points to the right, we switch going to the left."
+  ;;   (interactive)
+  ;;   ;; try to repeat
+  ;;   (when (not (haskell-indentation-indent-line-repeat))
+  ;;     (setq haskell-indentation-dyn-last-direction nil)
+  ;;     ;; parse error is intentionally not caught here, it may come from
+  ;;     ;; `haskell-indentation-find-indentations', but escapes the scope
+  ;;     ;; and aborts the operation before any moving happens
+  ;;     (let* ((cc (current-column))
+  ;;             (ci (haskell-indentation-current-indentation))
+  ;;             (inds (save-excursion
+  ;;                     (move-to-column ci)
+  ;;                     (or (haskell-indentation-find-indentations)
+  ;;                         '(0))))
+  ;;             (valid (memq ci inds))
+  ;;             (cursor-in-whitespace (< cc ci))
+  ;;             ;; certain evil commands need the behaviour seen in
+  ;;             ;; `haskell-indentation-newline-and-indent'
+  ;;             (evil-special-command (and (bound-and-true-p evil-mode)
+  ;;                                       (memq this-command '(evil-open-above
+  ;;                                                             evil-open-below
+  ;;                                                             evil-replace))))
+  ;;             (on-last-indent (eq ci (car (last inds)))))
+  ;;       (if (and valid cursor-in-whitespace)
+  ;;           (move-to-column ci)
+  ;;         (haskell-indentation-reindent-to
+  ;;           (funcall
+  ;;           (if on-last-indent
+  ;;               #'haskell-indentation-previous-indentation
+  ;;             #'haskell-indentation-next-indentation)
+  ;;           (if evil-special-command
+  ;;               (save-excursion
+  ;;                 (end-of-line 0)
+  ;;                 (1- (haskell-indentation-current-indentation)))
+  ;;             ci)
+  ;;           inds
+  ;;           'nofail)
+  ;;           cursor-in-whitespace))
+  ;;       (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
+  ;;             haskell-indentation-dyn-last-indentations inds))))
+
   )
 
-(defun stack-compile-command ()
-  (interactive)
-  (setq compile-command haskell-compile-cabal-build-command))
-
-(defun haskell-company-backends ()
-  (set (make-local-variable 'company-backends)
-                   (append '((company-lsp company-capf company-dabbrev-code company-yasnippet))
-                           company-backends)))
-
-(add-hook! haskell-mode 'stack-compile-command)
-(add-hook! haskell-mode 'haskell-company-backends)
-(add-hook! haskell-mode 'ormolu-format-on-save-mode)
-;; TODO is yas activated?
-;; TODO lsp-enable-xref?
-
-(evil-define-motion my-haskell-navigate-imports ()
-  "Navigate imports with evil motion"
-  :jump t
-  :type line
-  (haskell-navigate-imports))
-
-(evil-set-initial-state 'haskell-interactive-mode 'emacs)
-(evil-set-initial-state 'haskell-error-mode 'emacs)
-
-(map!
- :map haskell-mode-map
- :localleader
- "t" 'haskell-mode-show-type-at
- "h" 'hoogle
- "H" 'haskell-hoogle-lookup-from-website
- "i" 'my-haskell-navigate-imports
- "r" 'haskell-process-restart
- "q" 'lsp-ui-flycheck-list
- "c" 'haskell-compile
- "f" 'first-error
- "n" 'next-error
- "p" 'previous-error
- "F" 'haskell-goto-first-error
- "N" 'haskell-goto-next-error
- "P" 'haskell-goto-previous-error
- :when IS-MAC
- "d" 'dash-at-point
- "e" 'dash-at-point-with-docset
- )
-
-(defun allow-typed-holes ()
-  (interactive)
-  (save-excursion
-    (goto-char 1)
-    (insert "{-# OPTIONS_GHC -fdefer-typed-holes -Wno-typed-holes #-}\n")))
-
-(map! :map haskell-mode-map
-      :leader
-      :g "c h h" 'allow-typed-holes)
-
-;; Alignment
-;; (eval-after-load "align"
-;;   '(add-to-list 'align-rules-list
-;;                 '(haskell-types
-;;                   (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
-;;                   (modes quote (haskell-mode literate-haskell-mode)))))
-;; (eval-after-load "align"
-;;   '(add-to-list 'align-rules-list
-;;                 '(haskell-assignment
-;;                   (regexp . "\\(\\s-+\\)=\\s-+")
-;;                   (modes quote (haskell-mode literate-haskell-mode)))))
-;; (eval-after-load "align"
-;;   '(add-to-list 'align-rules-list
-;;                 '(haskell-arrows
-;;                   (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
-;;                   (modes quote (haskell-mode literate-haskell-mode)))))
-;; (eval-after-load "align"
-;;   '(add-to-list 'align-rules-list
-;;                 '(haskell-left-arrows
-;;                   (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
-;;                   (modes quote (haskell-mode literate-haskell-mode)))))
-
-;; (defun haskell-indentation-indent-line ()
-;;   "Indent current line, cycle though indentation positions.
-;; Do nothing inside multiline comments and multiline strings.
-;; Start enumerating the indentation points to the right.  The user
-;; can continue by repeatedly pressing TAB.  When there is no more
-;; indentation points to the right, we switch going to the left."
-;;   (interactive)
-;;   ;; try to repeat
-;;   (when (not (haskell-indentation-indent-line-repeat))
-;;     (setq haskell-indentation-dyn-last-direction nil)
-;;     ;; parse error is intentionally not caught here, it may come from
-;;     ;; `haskell-indentation-find-indentations', but escapes the scope
-;;     ;; and aborts the operation before any moving happens
-;;     (let* ((cc (current-column))
-;;             (ci (haskell-indentation-current-indentation))
-;;             (inds (save-excursion
-;;                     (move-to-column ci)
-;;                     (or (haskell-indentation-find-indentations)
-;;                         '(0))))
-;;             (valid (memq ci inds))
-;;             (cursor-in-whitespace (< cc ci))
-;;             ;; certain evil commands need the behaviour seen in
-;;             ;; `haskell-indentation-newline-and-indent'
-;;             (evil-special-command (and (bound-and-true-p evil-mode)
-;;                                       (memq this-command '(evil-open-above
-;;                                                             evil-open-below
-;;                                                             evil-replace))))
-;;             (on-last-indent (eq ci (car (last inds)))))
-;;       (if (and valid cursor-in-whitespace)
-;;           (move-to-column ci)
-;;         (haskell-indentation-reindent-to
-;;           (funcall
-;;           (if on-last-indent
-;;               #'haskell-indentation-previous-indentation
-;;             #'haskell-indentation-next-indentation)
-;;           (if evil-special-command
-;;               (save-excursion
-;;                 (end-of-line 0)
-;;                 (1- (haskell-indentation-current-indentation)))
-;;             ci)
-;;           inds
-;;           'nofail)
-;;           cursor-in-whitespace))
-;;       (setq haskell-indentation-dyn-last-direction (if on-last-indent 'left 'right)
-;;             haskell-indentation-dyn-last-indentations inds))))
-
-)
-
 (after! projectile
-  (projectile-register-project-type 'haskell-stack '("stack.yaml")
-    :compile "stack build --test --bench --no-run-tests --no-run-benchmarks --no-interleaved-output"
-    :test "stack build --test"))
+  (projectile-register-project-type
+   'haskell-stack '("stack.yaml")
+   :compile "stack build --test --bench --no-run-tests --no-run-benchmarks"
+   :test "stack build --test"))
 
 (defun rg-clear-doom-ansi-color-compilation-hook ()
   (make-local-variable 'compilation-filter-hook)
@@ -493,8 +549,8 @@
 
 (after! grip-mode
   (let ((credential (auth-source-user-and-password "api.github.com")))
-  (setq grip-github-user (car credential)
-        grip-github-password (cadr credential))))
+    (setq grip-github-user (car credential)
+          grip-github-password (cadr credential))))
 
 ;; Default directory
 (setq default-directory "~/")
@@ -537,7 +593,9 @@
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
 (setq doom-theme 'doom-one)
+;; (setq doom-theme 'doom-vibrant)
 ;; (setq doom-theme 'doom-tomorrow-night)
+;; (setq doom-theme 'doom-nord)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
