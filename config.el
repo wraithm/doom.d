@@ -115,6 +115,11 @@
   :desc "Compile"   "C" #'compile
   ))
 
+(map!
+ :m  "]k" #'flycheck-next-error
+ :m  "[k" #'flycheck-previous-error
+ )
+
 ;; evil-mode
 (after! evil
   (setq! evil-shift-width 4)
@@ -345,6 +350,7 @@
          haskell-process-log t
          lsp-haskell-formatting-provider "fourmolu"
          lsp-haskell-plugin-stan-global-on nil
+         lsp-haskell-check-project nil
          )
 
   (setq-hook! 'haskell-mode-hook
@@ -526,7 +532,7 @@
         (unstaged . show)
         (untracked . show)
         (unpushed . show)
-        (pullreqs . show)
+        (pullreqs . hide)
         (issues . hide)
         ))
 
