@@ -17,6 +17,7 @@
 
 ;;; Code:
 
+(require 'compile)
 (require 'term)
 
 ;; Set ghcid-target to change the stack target
@@ -52,8 +53,8 @@ recognize the new height until you manually restart it by calling
 `ghcid' again.
 "
   :lighter " Ghcid"
-  (when (fboundp 'nlinum-mode) (nlinum-mode -1))
-  (linum-mode -1)
+  ;; (when (fboundp 'nlinum-mode) (nlinum-mode -1))
+  ;; (linum-mode -1)
   (compilation-minor-mode))
 
 
@@ -63,15 +64,15 @@ recognize the new height until you manually restart it by calling
 ;; files. This approach is very similar to the 'omake' hacks included in
 ;; compilation mode.
 (add-to-list
-  'compilation-error-regexp-alist-alist
-  '(ghcid-reloading
-    "Reloading\\.\\.\\.\\(\\(\n  .+\\)*\\)" 1 nil nil nil nil
-    (0 (progn
-         (let* ((filenames (cdr (split-string (match-string 1) "\n  "))))
-           (dolist (filename filenames)
-             (compilation--flush-file-structure filename)))
-         nil))
-    ))
+ 'compilation-error-regexp-alist-alist
+ '(ghcid-reloading
+   "Reloading\\.\\.\\.\\(\\(\n  .+\\)*\\)" 1 nil nil nil nil
+   (0 (progn
+        (let* ((filenames (cdr (split-string (match-string 1) "\n  "))))
+          (dolist (filename filenames)
+            (compilation--flush-file-structure filename)))
+        nil))
+   ))
 (add-to-list 'compilation-error-regexp-alist 'ghcid-reloading)
 
 
@@ -87,7 +88,7 @@ recognize the new height until you manually restart it by calling
 ;; TODO Pass in compilation command like compilation-mode
 ;; TODO use --target instead of a new command
 (defun ghcid-command (h)
-    (format "ghcid -c \"%s\" -h %s\n" (ghcid-stack-cmd ghcid-target) h))
+  (format "ghcid -c \"%s\" -h %s\n" (ghcid-stack-cmd ghcid-target) h))
 
 (defun ghcid-get-buffer ()
   "Create or reuse a ghcid buffer with the configured name and
@@ -117,12 +118,12 @@ exactly. See `ghcid-mode'."
       (setq-local show-trailing-whitespace nil)
 
       (term-exec (ghcid-buffer-name)
-           ghcid-process-name
-           "/bin/zsh"
-           nil
-           (list "-c" (ghcid-command height)))
+                 ghcid-process-name
+                 (executable-find "zsh")
+                 nil
+                 (list "-c" (ghcid-command height)))
 
-      ; My preferences
+                                        ; My preferences
       (evil-force-normal-state)
       (goto-char (point-min))
 
