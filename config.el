@@ -73,6 +73,7 @@
  tab-width 4
  indent-tabs-mode nil
  fill-column 100
+ sentence-end-double-space nil
  vc-handled-backends '(Git) ; to disable vc-mode entirely
  )
 
@@ -145,17 +146,23 @@
 ;; Stamp operator
 (after! evil-snipe (evil-snipe-mode -1)) ; disable snipe mode
 
-(evil-define-operator evil-delete-without-register (beg end type yank-handler)
-  "Delete from beg to end and send to \"_ register"
-  (interactive "<R><y>")
-  (evil-delete beg end type ?_ yank-handler))
+;; (evil-define-operator evil-delete-without-register (beg end type yank-handler)
+;;   "Delete from beg to end and send to \"_ register"
+;;   (interactive "<R><y>")
+;;   (evil-delete beg end type ?_ yank-handler))
 
-(evil-define-operator evil-stamp (beg end)
-  "Replace text-object with 0th register contents"
-  (evil-delete-without-register beg end)
-  (evil-paste-from-register ?0))
+;; (evil-define-operator evil-stamp (beg end)
+;;   "Replace text-object with 0th register contents"
+;;   (evil-delete-without-register beg end)
+;;   (evil-paste-from-register ?0))
 
-(map! :n "S" 'evil-stamp)
+;; (map! :v "S" 'evil-stamp)
+
+;; Disable +evil:narrow-buffer
+(map! (:prefix "z"
+       :nv "n" nil
+       :nv "N" nil
+       ))
 
 (evil-set-initial-state 'sql-interactive-mode 'emacs)
 
