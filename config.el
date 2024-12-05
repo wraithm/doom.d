@@ -84,7 +84,7 @@
 (add-hook! org-mode 'turn-on-auto-fill)
 
 ;; dired
-(add-hook 'dired-after-readin-hook 'dired-git-info-auto-enable)
+;; (add-hook 'dired-after-readin-hook 'dired-git-info-auto-enable)
 
 ;; ivy
 ;; TODO ivy-imenu-goto (from my old config)
@@ -348,8 +348,8 @@
          haskell-indentation-layout-offset 4
          haskell-indentation-left-offset 4
          haskell-indentation-starter-offset 4
-         haskell-compile-stack-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
-         haskell-compile-stack-build-alt-command (concat "stack clean && " haskell-compile-stack-build-command)
+         haskell-compile-stack-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --docker"
+         haskell-compile-stack-build-alt-command (concat "stack clean --docker && " haskell-compile-stack-build-command)
          haskell-process-type 'stack-ghci
          haskell-process-suggest-remove-import-lines t
          haskell-process-suggest-hoogle-imports t
@@ -596,8 +596,10 @@
 
 (when IS-LINUX
   (setq
-   doom-font (font-spec :family "Fira Code" :size 12)
-   doom-big-font (font-spec :family "Fira Code" :size 18)
+   doom-font (font-spec :family "Berkeley Mono" :size 12)
+   doom-big-font (font-spec :family "Berkeley Mono" :size 18)
+   ;; doom-font (font-spec :family "Fira Code" :size 12)
+   ;; doom-big-font (font-spec :family "Fira Code" :size 18)
    ;; doom-font "Terminus (TTF):pixelsize=16:antialias=off"
    ;; doom-big-font "Terminus (TTF):pixelsize=20:antialias=off"
    ))
