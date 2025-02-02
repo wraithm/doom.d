@@ -4,32 +4,52 @@
 ;; sync' after modifying this file!
 
 ;; Transparent titlebar
-(when IS-MAC
-  (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
+(when (featurep :system 'macos)
+  (setq! server-socket-dir "~/.config/emacs/server")
 
-  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-  (add-to-list 'default-frame-alist '(ns-appearance . dark))
+  ;; TODO???
+  ;; (add-to-list 'default-frame-alist '(inhibit-double-buffering . t))
+
+  ;; doom takes care of this?
+  ;; (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  ;; (add-to-list 'default-frame-alist '(ns-appearance . dark))
 
   (remove-hook 'doom-first-buffer-hook #'global-hl-line-mode)
 
   (map! "M-C-f" 'toggle-frame-fullscreen)
   (map! "s-n" 'make-frame)
   (map!
-   (:when (not (modulep! :ui workspaces))
-     [remap delete-frame] nil
-     "s-w" #'delete-frame
-     ))
+   :when (not (modulep! :ui workspaces))
+   [remap delete-frame] nil
+   "s-w" #'delete-frame)
 
-  (require 'exec-path-from-shell)
-  (exec-path-from-shell-copy-env "SSH_AGENT_PID")
-  (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+  ;; (require 'exec-path-from-shell)
+  ;; (exec-path-from-shell-copy-env "SSH_AGENT_PID")
+  ;; (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
 
   ;; dash-at-point
-  (autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
+  ;; (autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
+  ;; (map!
+  ;;  "C-c d" 'dash-at-point
+  ;;  "C-c e" 'dash-at-point-with-docset
+  ;;  )
+
+  ;; remove shortcut keys
   (map!
-   "C-c d" 'dash-at-point
-   "C-c e" 'dash-at-point-with-docset
+   ;; "C-M-e" 'open-frame-maximized
+   "C-M-p" (lambda () (interactive) (shell-command "shortcuts run \"Play\/Pause\""))
+   "C-M-=" nil
+   ;; just to get over the initial annoyance of switching to C-M-- is pull up slack instead of these
+   ;; "s--" nil
+   ;; "s-=" nil
+   ;; :n "C-M--" nil
+   ;; :n "C-M-=" nil
    )
+
+  ;; macOS window settings
+  (add-to-list 'default-frame-alist '(height . 100))
+  (add-to-list 'default-frame-alist '(left . 750))
+  (add-to-list 'default-frame-alist '(top + -500))
 
   )
 
@@ -37,8 +57,6 @@
 
 ;; Window settings
 (add-to-list 'default-frame-alist '(width . 180))
-(add-to-list 'default-frame-alist '(height . 90))
-(add-to-list 'default-frame-alist '(left . 500))
 
 (defun open-frame-maximized ()
   (interactive)
@@ -112,8 +130,9 @@
 (map!
  :leader
  (:prefix-map ("c" . "code")
-  :desc "Recompile" "c" #'recompile
-  :desc "Compile"   "C" #'compile
+  :desc "Recompile"        "c" #'recompile
+  :desc "Compile"          "C" #'compile
+  :desc "Kill compilation" "k" #'kill-compilation
   ))
 
 (map!
@@ -348,8 +367,13 @@
          haskell-indentation-layout-offset 4
          haskell-indentation-left-offset 4
          haskell-indentation-starter-offset 4
-         haskell-compile-stack-build-command "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --docker"
-         haskell-compile-stack-build-alt-command (concat "stack clean --docker && " haskell-compile-stack-build-command)
+         haskell-compile-stack-build-command-test "stack test"
+         haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
+         haskell-compile-stack-build-alt-command-native (concat "stack clean && " haskell-compile-stack-build-command-native)
+         haskell-compile-stack-build-command-docker "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --docker --work-dir .stack-work-docker"
+         haskell-compile-stack-build-alt-command-docker (concat "stack clean --work-dir .stack-work-docker --docker && " haskell-compile-stack-build-command-docker)
+         haskell-compile-stack-build-command haskell-compile-stack-build-command-native
+         haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
          haskell-process-type 'stack-ghci
          haskell-process-suggest-remove-import-lines t
          haskell-process-suggest-hoogle-imports t
@@ -367,7 +391,28 @@
 
   (defun stack-compile-command ()
     (interactive)
-    (setq compile-command haskell-compile-stack-build-command))
+    (setq! compile-command haskell-compile-stack-build-command))
+
+  (defun stack-native-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-stack-build-command-native
+           haskell-compile-stack-build-command haskell-compile-stack-build-command-native
+           haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
+           ))
+
+  (defun stack-test-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-stack-build-command-test
+           haskell-compile-stack-build-command haskell-compile-stack-build-command-test
+           haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
+           ))
+
+  (defun stack-docker-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-stack-build-command-docker
+           haskell-compile-stack-build-command haskell-compile-stack-build-command-docker
+           haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-docker
+           ))
 
   (defun haskell-company-backends ()
     (set (make-local-variable 'company-backends)
@@ -405,9 +450,9 @@
    "F" 'haskell-goto-first-error
    "N" 'haskell-goto-next-error
    "P" 'haskell-goto-previous-error
-   :when IS-MAC
-   "d" 'dash-at-point
-   "e" 'dash-at-point-with-docset
+   ;; :when (featurep :system 'macos)
+   ;; "d" 'dash-at-point
+   ;; "e" 'dash-at-point-with-docset
    )
 
   (defun allow-typed-holes ()
@@ -585,16 +630,21 @@
 ;;
 ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
 ;; font string. You generally only need these two:
-(when IS-MAC
+(when (featurep :system 'macos)
   (setq
-   doom-font (font-spec :family "SF Mono" :size 12)
-   doom-big-font (font-spec :family "SF Mono" :size 16)
-   ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
-   ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
-   doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
+   doom-font (font-spec :family "Berkeley Mono Variable" :size 12)
+   doom-big-font (font-spec :family "Berkeley Mono Variable" :size 18)
+   doom-variable-pitch-font (font-spec :family "Berkeley Mono Variable" :size 12)
+   ;; doom-font (font-spec :family "Berkeley Mono" :size 12)
+   ;; doom-big-font (font-spec :family "Berkeley Mono" :size 18)
+   ;;    doom-font (font-spec :family "SF Mono" :size 12)
+   ;;    doom-big-font (font-spec :family "SF Mono" :size 16)
+   ;;    ;; doom-font (font-spec :family "JetBrains Mono" :size 12)
+   ;;    ;; doom-big-font (font-spec :family "JetBrains Mono" :size 16)
+   ;;    doom-variable-pitch-font (font-spec :family "Avenir Next" :size 12)
    ))
 
-(when IS-LINUX
+(when (featurep :system 'linux)
   (setq
    doom-font (font-spec :family "Berkeley Mono" :size 12)
    doom-big-font (font-spec :family "Berkeley Mono" :size 18)
