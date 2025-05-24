@@ -86,3 +86,6 @@
 ;;     :recipe (:host github :repo "paperwm/gnome-shell-mode"
 ;;              :files ("local/company-gnome-shell/*.el")))
 ;;   )
+
+(package! just-mode)
+(package! sqlformat)

@@ -16,16 +16,16 @@
 
   (remove-hook 'doom-first-buffer-hook #'global-hl-line-mode)
 
-  (map! "M-C-f" 'toggle-frame-fullscreen)
+  ;; (map! "M-C-f" 'toggle-frame-fullscreen)
   (map! "s-n" 'make-frame)
   (map!
    :when (not (modulep! :ui workspaces))
    [remap delete-frame] nil
    "s-w" #'delete-frame)
 
-  ;; (require 'exec-path-from-shell)
-  ;; (exec-path-from-shell-copy-env "SSH_AGENT_PID")
-  ;; (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+  (require 'exec-path-from-shell)
+  (exec-path-from-shell-copy-env "SSH_AGENT_PID")
+  (exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
 
   ;; dash-at-point
   ;; (autoload 'dash-at-point "dash-at-point" "Search the word at point with Dash." t nil)
@@ -47,9 +47,9 @@
    )
 
   ;; macOS window settings
-  (add-to-list 'default-frame-alist '(height . 100))
-  (add-to-list 'default-frame-alist '(left . 750))
-  (add-to-list 'default-frame-alist '(top + -500))
+  ;; (add-to-list 'default-frame-alist '(height . 100))
+  ;; (add-to-list 'default-frame-alist '(left . 750))
+  ;; (add-to-list 'default-frame-alist '(top + -500))
 
   )
 
@@ -261,19 +261,31 @@
 
 ;; web-mode
 (after! web
-  (setq web-mode-markup-indent-offset 2)
-  (setq web-mode-css-indent-offset 2)
-  (setq web-mode-code-indent-offset 2)
-  (setq web-mode-script-padding 0)
-  (setq web-mode-style-padding 0)
+  (setq! web-mode-markup-indent-offset 2)
+  (setq! web-mode-css-indent-offset 2)
+  (setq! web-mode-code-indent-offset 2)
+  (setq! web-mode-script-padding 0)
+  (setq! web-mode-style-padding 0)
   )
 (add-hook! web-mode 'prettier-js-mode)
 (add-hook! js2-mode 'prettier-js-mode)
 
-;; tramp
-;; (after! tramp
-;;   (setq! tramp-default-method "sshx")
+;; sqlformat
+;; (after! sqlformat
+;;   (setq! sqlformat-command 'pgformatter)
+;;   (setq! sqlformat-args '("-g"))
+;;   (map!
+;;    :map sql-mode-map
+;;    :localleader
+;;    "f" 'sqlformat
+;;    )
 ;;   )
+;; (add-hook 'sql-mode-hook 'sqlformat-on-save-mode)
+
+;; tramp
+(after! tramp
+  (setq! tramp-default-method "sshx")
+  )
 
 ;; smartparens
 (remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
@@ -368,9 +380,10 @@
          haskell-indentation-left-offset 4
          haskell-indentation-starter-offset 4
          haskell-compile-stack-build-command-test "stack test"
-         haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
+         ;; haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
+         haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks"
          haskell-compile-stack-build-alt-command-native (concat "stack clean && " haskell-compile-stack-build-command-native)
-         haskell-compile-stack-build-command-docker "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS' --docker --work-dir .stack-work-docker"
+         haskell-compile-stack-build-command-docker "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -V0 -RTS' --docker --work-dir .stack-work-docker"
          haskell-compile-stack-build-alt-command-docker (concat "stack clean --work-dir .stack-work-docker --docker && " haskell-compile-stack-build-command-docker)
          haskell-compile-stack-build-command haskell-compile-stack-build-command-native
          haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
