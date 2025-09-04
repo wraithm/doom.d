@@ -91,9 +91,3 @@
 (package! sqlformat)
 
 (package! lsp-biome :recipe `(:host github :repo "cxa/lsp-biome"))
-
-;; Temporary!!
-;; (package! ghub
-;;   :pin "97a07691efad6fc16bc000a35be80d4f8dae251a" ; 4.3.2
-;;   ;; ghub requires Emacs 29.1+
-;;   :disable (version< emacs-version "29.1"))
