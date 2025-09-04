@@ -144,7 +144,8 @@
 (after! evil
   (setq! evil-shift-width 4)
   (setq! evil-want-C-w-in-emacs-state t)
-  (setq +evil-want-o/O-to-continue-comments nil)
+  (setq! +evil-want-o/O-to-continue-comments nil)
+  (setq! evil-ex-search-case 'insensitive)
   )
 
 (map!
@@ -267,8 +268,8 @@
   (setq! web-mode-script-padding 0)
   (setq! web-mode-style-padding 0)
   )
-(add-hook! web-mode 'prettier-js-mode)
-(add-hook! js2-mode 'prettier-js-mode)
+;; (add-hook! web-mode 'prettier-js-mode)
+;; (add-hook! js2-mode 'prettier-js-mode)
 
 ;; sqlformat
 ;; (after! sqlformat
@@ -281,6 +282,15 @@
 ;;    )
 ;;   )
 ;; (add-hook 'sql-mode-hook 'sqlformat-on-save-mode)
+
+;; sqlfluff
+(add-hook! sql-mode
+  (set-formatter!
+    'sqlfluff
+    '("sqlfluff" "format" "--quiet"
+      "--processes" "0" "--disable-progress-bar" "--stdin-filename" "--nocolor"
+      "-")
+    :modes '(sql-mode)))
 
 ;; tramp
 (after! tramp
@@ -295,7 +305,7 @@
 (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc haskell-stack-ghc haskell-ghc))
 
 ;; LSP
-(setq
+(setq!
  lsp-ui-sideline-enable nil
  lsp-ui-doc-enable nil
  lsp-ui-doc-max-height 50
@@ -303,6 +313,7 @@
  lsp-enable-file-watchers nil
  lsp-before-save-edits nil
  lsp-nix-server-path "nil"
+ lsp-biome-format-on-save t
  )
 
 ;; Get format-on-save for hcl files
@@ -317,7 +328,7 @@
 
 (setq +format-on-save-enabled-modes
       '(not emacs-lisp-mode    ; elisp's mechanisms are good enough
-        sql-mode           ; sqlformat is currently broken
+        ;; sql-mode           ; sqlformat is currently broken
         tex-mode           ; latexindent is broken
         latex-mode
         org-msg-edit-mode
@@ -383,11 +394,18 @@
          ;; haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -RTS'"
          haskell-compile-stack-build-command-native "stack build --test --bench --no-run-tests --no-run-benchmarks"
          haskell-compile-stack-build-alt-command-native (concat "stack clean && " haskell-compile-stack-build-command-native)
-         haskell-compile-stack-build-command-docker "stack build --test --bench --no-run-tests --no-run-benchmarks --ghc-options='-j4 +RTS -A256m -I0 -V0 -RTS' --docker --work-dir .stack-work-docker"
+         haskell-compile-stack-build-command-docker "stack build --test --bench --no-run-tests --no-run-benchmarks --docker --work-dir .stack-work-docker"
          haskell-compile-stack-build-alt-command-docker (concat "stack clean --work-dir .stack-work-docker --docker && " haskell-compile-stack-build-command-docker)
          haskell-compile-stack-build-command haskell-compile-stack-build-command-native
          haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
-         haskell-process-type 'stack-ghci
+         haskell-compile-cabal-build-command-test "cabal test all"
+         ;; TODO cabal docker commands
+         haskell-compile-cabal-build-command-native "cabal build all --enable-tests --enable-benchmarks"
+         haskell-compile-cabal-build-alt-command-native (concat "cabal clean && " haskell-compile-cabal-build-command-native)
+         haskell-compile-cabal-build-command haskell-compile-cabal-build-command-native
+         haskell-compile-cabal-build-alt-command haskell-compile-cabal-build-alt-command-native
+         ;; haskell-process-type 'stack-ghci
+         haskell-process-type 'cabal-repl
          haskell-process-suggest-remove-import-lines t
          haskell-process-suggest-hoogle-imports t
          haskell-process-auto-import-loaded-modules t
@@ -398,7 +416,8 @@
          )
 
   (setq-hook! 'haskell-mode-hook
-    compile-command haskell-compile-stack-build-command
+    ;; compile-command haskell-compile-stack-build-command
+    compile-command haskell-compile-cabal-build-command
     ormolu-process-path "fourmolu"
     )
 
@@ -427,12 +446,31 @@
            haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-docker
            ))
 
+  (defun cabal-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-cabal-build-command))
+
+  (defun cabal-native-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-cabal-build-command-native
+           haskell-compile-cabal-build-command haskell-compile-cabal-build-command-native
+           haskell-compile-cabal-build-alt-command haskell-compile-cabal-build-alt-command-native
+           ))
+
+  (defun cabal-test-compile-command ()
+    (interactive)
+    (setq! compile-command haskell-compile-cabal-build-command-test
+           haskell-compile-cabal-build-command haskell-compile-cabal-build-command-test
+           haskell-compile-cabal-build-alt-command haskell-compile-cabal-build-alt-command-native
+           ))
+
   (defun haskell-company-backends ()
     (set (make-local-variable 'company-backends)
          (append '((company-lsp company-capf company-dabbrev-code company-yasnippet))
                  company-backends)))
 
-  (add-hook! haskell-mode 'stack-compile-command)
+  ;; (add-hook! haskell-mode 'stack-compile-command)
+  (add-hook! haskell-mode 'cabal-compile-command)
   (add-hook! haskell-mode 'haskell-company-backends)
   (add-hook! haskell-mode 'ormolu-format-on-save-mode)
   ;; TODO is yas activated?
@@ -572,11 +610,56 @@
 
   )
 
+(defun mw/file-exists-p (filepath)
+  "Determine if a given file exists returning the FILEPATH if it does."
+  (when (file-exists-p filepath)
+    filepath))
+
+(defun mw/is-haskell-package-p (dir)
+  "Determine if the given DIR is a haskell package directory.
+Returns the full path to the detected Haskell package file."
+  (let ((hs-files '("package.yaml" "*.cabal" "cabal.project" "stack.yaml")))
+    (-any (lambda (x)
+            (or (mw/file-exists-p (concat dir x))
+                (-any 'mw/file-exists-p (file-expand-wildcards (concat dir x)))))
+          hs-files)))
+
+(defun mw/is-package-dir (dir)
+  "Determine if the given DIR refers to a package.
+Returns the full path to the detected package file.
+Useful to use when `locate-dominating-file'."
+  ;; TODO Should be refactored so we have a mapping from 'major-mode -> package-file-list'
+  (cond ((derived-mode-p 'haskell-mode 'haskell-cabal-mode) (mw/is-haskell-package-p dir))
+        ((derived-mode-p 'clojure-mode) (mw/is-clojure-package-p dir))
+        (t (message (concat "Finding package for " (symbol-name major-mode) " is not supported!"))
+           nil)))
+
+(defun mw/projectile-package-dir ()
+  "Open closest package directory found upwards starting from `default-directory'."
+  (interactive)
+  (let ((package-dir (projectile-locate-dominating-file default-directory #'mw/is-package-dir)))
+    (when package-dir (dired package-dir))))
+
+(defun mw/projectile-package-file ()
+  "Open closest package file found upwards starting from `default-directory'."
+  (interactive)
+  (let ((package-dir (projectile-locate-dominating-file default-directory #'mw/is-package-dir)))
+    (when package-dir
+      (find-file (mw/is-package-dir package-dir)))))
+
 (after! projectile
+  ;; (projectile-register-project-type
+  ;;  'haskell-stack '("stack.yaml")
+  ;;  :compile "stack build --test --bench --no-run-tests --no-run-benchmarks"
+  ;;  :test "stack build --test")
+
   (projectile-register-project-type
-   'haskell-stack '("stack.yaml")
-   :compile "stack build --test --bench --no-run-tests --no-run-benchmarks"
-   :test "stack build --test"))
+   'haskell-cabal '("cabal.project")
+   :compile "cabal build all --enable-tests --enable-benchmarks"
+   :test "cabal test all")
+
+  (map! :localleader :desc "Package description file" :nv "," #'mw/projectile-package-file)
+  )
 
 (defun rg-clear-doom-ansi-color-compilation-hook ()
   (make-local-variable 'compilation-filter-hook)
@@ -611,9 +694,9 @@
       :desc "Start code review"
       :g "g v" '+magit/start-code-review)
 
-(after! magit-worktree
-  (transient-append-suffix 'magit-dispatch '(0 -1 -1)
-    '("*" "Worktree" magit-worktree)))
+;; (after! magit-worktree
+;;   (transient-append-suffix 'magit-dispatch '(0 -1 -1)
+;;     '("*" "Worktree" magit-worktree)))
 
 ;; Auth sources
 (setq auth-sources '("~/.authinfo" "~/.netrc"))
