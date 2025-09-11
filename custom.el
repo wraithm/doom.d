@@ -20,7 +20,7 @@
      (ormolu-process-path . "fourmolu")
      (lsp-haskell-formatting-provider . "fourmolu")
      (haskell-stylish-on-save)
-     (haskell-process-type . stack-ghci)
+     (haskell-process-type . cabal-repl)
      (haskell-indentation-starter-offset . 4)
      (haskell-indentation-left-offset . 4)
      (haskell-indentation-layout-offset . 4)

@@ -400,7 +400,8 @@
          haskell-compile-stack-build-alt-command haskell-compile-stack-build-alt-command-native
          haskell-compile-cabal-build-command-test "cabal test all"
          ;; TODO cabal docker commands
-         haskell-compile-cabal-build-command-native "cabal build all --enable-tests --enable-benchmarks"
+         ;; haskell-compile-cabal-build-command-native "cabal build all --enable-tests --enable-benchmarks"
+         haskell-compile-cabal-build-command-native "cabal build all"
          haskell-compile-cabal-build-alt-command-native (concat "cabal clean && " haskell-compile-cabal-build-command-native)
          haskell-compile-cabal-build-command haskell-compile-cabal-build-command-native
          haskell-compile-cabal-build-alt-command haskell-compile-cabal-build-alt-command-native
@@ -655,7 +656,7 @@ Useful to use when `locate-dominating-file'."
 
   (projectile-register-project-type
    'haskell-cabal '("cabal.project")
-   :compile "cabal build all --enable-tests --enable-benchmarks"
+   :compile "cabal build all"
    :test "cabal test all")
 
   (map! :localleader :desc "Package description file" :nv "," #'mw/projectile-package-file)
