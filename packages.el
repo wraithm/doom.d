@@ -91,3 +91,6 @@
 (package! sqlformat)
 
 (package! lsp-biome :recipe `(:host github :repo "cxa/lsp-biome"))
+
+(package! claude-code-ide
+  :recipe (:host github :repo "manzaltu/claude-code-ide.el"))

@@ -699,6 +699,31 @@ Useful to use when `locate-dominating-file'."
 ;;   (transient-append-suffix 'magit-dispatch '(0 -1 -1)
 ;;     '("*" "Worktree" magit-worktree)))
 
+(after! magit
+  (require 'transient)
+
+  ;; Async so you get the usual Magit process buffer output.
+  (defun my/magit-sync-master ()
+    "Fetch origin/master into local master without checkout."
+    (interactive)
+    (magit-run-git-async "fetch" "origin" "master:master"))
+
+  ;; Add "f sync master" under the Fetch menu (`o` in Magit).
+  (transient-append-suffix 'magit-fetch "o"
+    '("s" "sync master" my/magit-sync-master))
+
+  ;; Optional: a leader binding anywhere.
+  (map! :leader
+        :desc "Magit: sync master"
+        "g m" #'my/magit-sync-master)
+)
+
+;; Claude Code
+(use-package! claude-code-ide
+  :bind ("C-c C-'" . claude-code-ide-menu) ; Set your favorite keybinding
+  :config
+  (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+
 ;; Auth sources
 (setq auth-sources '("~/.authinfo" "~/.netrc"))
 
