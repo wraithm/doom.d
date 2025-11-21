@@ -712,11 +712,24 @@ Useful to use when `locate-dominating-file'."
   (transient-append-suffix 'magit-fetch "o"
     '("s" "sync master" my/magit-sync-master))
 
-  ;; Optional: a leader binding anywhere.
+  ;; SPC g m to sync master branch
   (map! :leader
         :desc "Magit: sync master"
         "g m" #'my/magit-sync-master)
-)
+
+  (defun my/magit-gh-poi-topdir ()
+    "Run `gh poi` via `magit-shell-command-topdir` (repo root, popup output)."
+    (interactive)
+    (unless (executable-find "gh")
+      (user-error "Cannot find `gh` on PATH"))
+    (magit-shell-command-topdir "gh poi"))
+
+  ;; Local leader in Magit buffers: SPC g p
+  (map! :leader
+        :desc "gh poi"
+        "g p" #'my/magit-gh-poi-topdir)
+
+  )
 
 ;; Claude Code
 (use-package! claude-code-ide
